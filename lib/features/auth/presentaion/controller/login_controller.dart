@@ -33,10 +33,10 @@ class LoginController with ChangeNotifier {
     );
   }
 
-  void toggleOtpSent() {
-    _otpSent = !_otpSent;
-    notifyListeners();
-  }
+  // void toggleOtpSent() {
+  //   _otpSent = !_otpSent;
+  //   notifyListeners();
+  // }
 
   void resendOtp() async {
     FirebaseAuth auth = FirebaseAuth.instance;

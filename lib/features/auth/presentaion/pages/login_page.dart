@@ -14,7 +14,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final LoginController _loginController = Provider.of<LoginController>(
+    final LoginController loginController = Provider.of<LoginController>(
       context,
       listen: true,
     );
@@ -28,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
               controller: _phoneController,
               decoration: InputDecoration(labelText: 'Phone Number'),
             ),
-            _loginController.otpSent
+            loginController.otpSent
                 ? TextField(
                     controller: _otpController,
                     decoration: InputDecoration(labelText: 'OTP'),
@@ -36,19 +36,19 @@ class _LoginPageState extends State<LoginPage> {
                 : Container(),
             ElevatedButton(
               onPressed: () {
-                if (!_loginController.otpSent) {
+                if (!loginController.otpSent) {
                   // Send OTP
-                  _loginController.phone = _phoneController.text;
-                  _loginController.sendOtp();
+                  loginController.phone = _phoneController.text;
+                  loginController.sendOtp();
                 } else {
                   // Verify OTP
-                  _loginController.smsOtp = _otpController.text;
+                  loginController.smsOtp = _otpController.text;
 
-                  _loginController.verifyOTP();
+                  loginController.verifyOTP();
                   // You might want to call a verify method here
                 }
               },
-              child: _loginController.otpSent
+              child: loginController.otpSent
                   ? Text('Verify OTP')
                   : Text('Send OTP'),
             ),
