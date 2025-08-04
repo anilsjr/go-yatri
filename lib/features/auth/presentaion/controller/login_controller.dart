@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+import 'package:goyatri/routes/routes.dart';
 
 class LoginController with ChangeNotifier {
   String phone = '';
@@ -72,7 +73,7 @@ class LoginController with ChangeNotifier {
 
       print('✅ Phone number verified. UID: ${userCredential.user?.uid}');
 
-      Get.offNamed('/details');
+      Get.offNamed(AppRoutes.home);
     } catch (e) {
       print('❌ Invalid OTP or Verification Failed: $e');
     }

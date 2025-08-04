@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'GoYatri',
-      initialRoute: AppRoutes.login,
+      initialRoute: AppRoutes.mappage,
       getPages: AppRoutes.routes,
     );
   }
