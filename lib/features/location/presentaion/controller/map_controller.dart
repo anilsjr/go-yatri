@@ -13,7 +13,6 @@ class MapController extends ChangeNotifier {
   GoogleMapController? mapController;
   final String googleApiKey = 'AIzaSyBIJfuTJME0jr6ubJCNuDK9oUEHMWNrzEY';
   LatLng? currentPosition;
-  LatLng initialPosition = AppConstant.initialPosition;
   Set<Marker> markers = {};
   Set<Polyline> polylines = {};
   List<LatLng> polylineCoordinates = [];
@@ -66,14 +65,13 @@ class MapController extends ChangeNotifier {
     );
 
     currentPosition = LatLng(position.latitude, position.longitude);
-    initialPosition = currentPosition!;
-    markers.add(
-      Marker(
-        markerId: MarkerId('current'),
-        position: currentPosition!,
-        icon: markerIconGreen,
-      ),
-    );
+    // markers.add(
+    //   Marker(
+    //     markerId: MarkerId('current'),
+    //     position: currentPosition!,
+    //     icon: markerIconGreen,
+    //   ),
+    // );
     notifyListeners();
     if (mapController != null) {
       mapController!.animateCamera(
@@ -95,13 +93,15 @@ class MapController extends ChangeNotifier {
     if (mapStyle != null) {
       mapController!.setMapStyle(mapStyle);
     }
-    markers.add(
-      Marker(
-        markerId: MarkerId('start'),
-        position: currentPosition ?? initialPosition,
-        icon: markerIconGreen,
-      ),
-    );
+    if (currentPosition != null) {
+      markers.add(
+        Marker(
+          markerId: MarkerId('start'),
+          position: currentPosition!,
+          icon: markerIconGreen,
+        ),
+      );
+    }
     notifyListeners();
   }
 
@@ -166,5 +166,33 @@ class MapController extends ChangeNotifier {
     if (currentPosition != null) {
       drawRoute(currentPosition!, selected);
     }
+  }
+
+  void fitCameraToPolyline() {
+    if (polylines.isEmpty || mapController == null) return;
+
+    final points = polylines.first.points;
+    if (points.isEmpty) return;
+
+    double minLat = points.first.latitude;
+    double maxLat = points.first.latitude;
+    double minLng = points.first.longitude;
+    double maxLng = points.first.longitude;
+
+    for (var point in points) {
+      if (point.latitude < minLat) minLat = point.latitude;
+      if (point.latitude > maxLat) maxLat = point.latitude;
+      if (point.longitude < minLng) minLng = point.longitude;
+      if (point.longitude > maxLng) maxLng = point.longitude;
+    }
+
+    final bounds = LatLngBounds(
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
+    );
+
+    mapController!.animateCamera(
+      CameraUpdate.newLatLngBounds(bounds, 50), // 50 is padding
+    );
   }
 }

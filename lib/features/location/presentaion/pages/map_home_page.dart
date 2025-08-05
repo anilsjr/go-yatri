@@ -66,18 +66,35 @@ class _MapScreenBodyState extends State<_MapScreenBody> {
                   ),
                 ),
                 Expanded(
-                  child: GoogleMap(
-                    onMapCreated: controller.onMapCreated,
-                    initialCameraPosition: CameraPosition(
-                      target:
-                          controller.currentPosition ??
-                          controller.initialPosition,
-                      zoom: 12,
-                    ),
-                    markers: controller.markers,
-                    polylines: controller.polylines,
-                    myLocationEnabled: true,
-                    myLocationButtonEnabled: true,
+                  child: Stack(
+                    children: [
+                      GoogleMap(
+                        onMapCreated: controller.onMapCreated,
+                        rotateGesturesEnabled: false,
+                        initialCameraPosition: CameraPosition(
+                          target:
+                              controller.currentPosition ??
+                              LatLng(20.5937, 78.9629),
+                          zoom: 12,
+                        ),
+                        markers: controller.markers,
+                        polylines: controller.polylines,
+                        myLocationEnabled: true,
+                        myLocationButtonEnabled: true,
+                      ),
+                      Positioned(
+                        bottom: 16,
+                        right: 16,
+                        child: FloatingActionButton(
+                          heroTag: "fitPathBtn",
+                          onPressed: () {
+                            controller.fitCameraToPolyline();
+                          },
+                          child: const Icon(Icons.route),
+                          tooltip: "Show Complete Path",
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
