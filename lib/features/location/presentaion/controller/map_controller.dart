@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:dio/dio.dart';
@@ -114,7 +115,14 @@ class MapController extends ChangeNotifier {
       final response = await dio.get(url);
       if (response.statusCode == 200) {
         final data = response.data;
-
+        if (kDebugMode) {
+          print(
+            'Response: ==================================================================================================================$data',
+          );
+          print(
+            'Response: ==================================================================================================================end ---$url',
+          );
+        }
         if (data['routes'].isNotEmpty) {
           polylineCoordinates.clear();
 
@@ -165,6 +173,14 @@ class MapController extends ChangeNotifier {
     }
     if (currentPosition != null) {
       drawRoute(currentPosition!, selected);
+    }
+  }
+
+  void moveToCurrentLocation() {
+    if (currentPosition != null && mapController != null) {
+      mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(currentPosition!, 18),
+      );
     }
   }
 

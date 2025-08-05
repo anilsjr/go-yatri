@@ -22,6 +22,7 @@ class _MapScreenBody extends StatefulWidget {
 
 class _MapScreenBodyState extends State<_MapScreenBody> {
   final TextEditingController _searchController = TextEditingController();
+  bool isMyLocation = true;
 
   @override
   void dispose() {
@@ -71,6 +72,9 @@ class _MapScreenBodyState extends State<_MapScreenBody> {
                       GoogleMap(
                         onMapCreated: controller.onMapCreated,
                         rotateGesturesEnabled: false,
+                        zoomControlsEnabled: false,
+                        myLocationButtonEnabled: false,
+                        compassEnabled: false,
                         initialCameraPosition: CameraPosition(
                           target:
                               controller.currentPosition ??
@@ -80,18 +84,44 @@ class _MapScreenBodyState extends State<_MapScreenBody> {
                         markers: controller.markers,
                         polylines: controller.polylines,
                         myLocationEnabled: true,
-                        myLocationButtonEnabled: true,
+                      ),
+                      Positioned(
+                        bottom: 60,
+                        right: 16,
+                        child: IconButton(
+                          iconSize: 20,
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: const CircleBorder(),
+                            // padding: const EdgeInsets.all(4),
+                          ),
+                          icon: const Icon(Icons.undo_rounded),
+                          onPressed: () {
+                            setState(() {
+                              isMyLocation = false;
+                            });
+                            controller.fitCameraToPolyline();
+                          },
+                          tooltip: "Show Complete Path",
+                        ),
                       ),
                       Positioned(
                         bottom: 16,
                         right: 16,
-                        child: FloatingActionButton(
-                          heroTag: "fitPathBtn",
+                        child: IconButton(
+                          iconSize: 20,
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: const CircleBorder(),
+                          ),
                           onPressed: () {
-                            controller.fitCameraToPolyline();
+                            setState(() {
+                              isMyLocation = true;
+                            });
+                            controller.moveToCurrentLocation();
                           },
-                          child: const Icon(Icons.route),
-                          tooltip: "Show Complete Path",
+                          tooltip: "My Location",
+                          icon: const Icon(Icons.my_location),
                         ),
                       ),
                     ],
