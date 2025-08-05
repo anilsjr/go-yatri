@@ -15,12 +15,14 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  late BitmapDescriptor _markerIconGreen;
+  late BitmapDescriptor _markerIconRed;
   late GoogleMapController mapController;
-  final String googleApiKey = AppConstant.googleApiKey;
+  final String googleApiKey = 'AIzaSyBIJfuTJME0jr6ubJCNuDK9oUEHMWNrzEY';
   LatLng? _currentPosition;
 
-  final LatLng _initialPosition = AppConstant.initialPosition;
-
+  LatLng _initialPosition = AppConstant.initialPosition;
+  // Delhi
   Set<Marker> _markers = {};
   Set<Polyline> _polylines = {};
   List<LatLng> _polylineCoordinates = [];
@@ -31,10 +33,26 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    _searchController.addListener(() {
+      setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadMapStyle();
       _getCurrentLocation();
       _checkLocationPermission();
+    });
+    BitmapDescriptor.fromAssetImage(
+      ImageConfiguration(devicePixelRatio: 2.5),
+      'assets/icons/red_marker.png',
+    ).then((onValue) {
+      _markerIconRed = onValue;
+    });
+
+    BitmapDescriptor.fromAssetImage(
+      ImageConfiguration(devicePixelRatio: 2.5),
+      'assets/icons/green_marker.png',
+    ).then((onValue) {
+      _markerIconGreen = onValue;
     });
   }
 
@@ -65,13 +83,12 @@ class _MapScreenState extends State<MapScreen> {
 
     setState(() {
       _currentPosition = LatLng(position.latitude, position.longitude);
+      _initialPosition = _currentPosition!;
       _markers.add(
         Marker(
           markerId: MarkerId('current'),
           position: _currentPosition!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueGreen,
-          ),
+          icon: _markerIconGreen,
         ),
       );
 
@@ -100,6 +117,7 @@ class _MapScreenState extends State<MapScreen> {
         Marker(
           markerId: MarkerId('start'),
           position: _currentPosition ?? _initialPosition,
+          icon: _markerIconGreen,
         ),
       );
     });
@@ -160,7 +178,11 @@ class _MapScreenState extends State<MapScreen> {
 
     setState(() {
       _markers.add(
-        Marker(markerId: MarkerId('destination'), position: selected),
+        Marker(
+          markerId: MarkerId('destination'),
+          position: selected,
+          icon: _markerIconRed,
+        ),
       );
     });
 
@@ -172,50 +194,52 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Google Maps with Search')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: GooglePlaceAutoCompleteTextField(
-              textEditingController: _searchController,
-              googleAPIKey: googleApiKey,
-              inputDecoration: InputDecoration(
-                hintText: 'Search Places',
-                contentPadding: EdgeInsets.symmetric(
-                  // vertical: 10,
-                  horizontal: 12,
+      // appBar: AppBar(title: Text('Google Maps with Search')),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: GooglePlaceAutoCompleteTextField(
+                textEditingController: _searchController,
+                googleAPIKey: googleApiKey,
+                inputDecoration: InputDecoration(
+                  hintText: 'Search Places',
+                  contentPadding: EdgeInsets.symmetric(
+                    // vertical: 10,
+                    horizontal: 12,
+                  ),
+                  border: InputBorder.none,
                 ),
-                border: InputBorder.none,
+                debounceTime: 600,
+                countries: ["in"],
+                isLatLngRequired: true,
+                getPlaceDetailWithLatLng: (prediction) {
+                  final lat = double.parse(prediction.lat!);
+                  final lng = double.parse(prediction.lng!);
+                  _onPlaceSelected(lat, lng);
+                },
+                itemClick: (prediction) {
+                  _searchController.text = prediction.description!;
+                  FocusScope.of(context).unfocus();
+                },
               ),
-              debounceTime: 600,
-              countries: ["in"],
-              isLatLngRequired: true,
-              getPlaceDetailWithLatLng: (prediction) {
-                final lat = double.parse(prediction.lat!);
-                final lng = double.parse(prediction.lng!);
-                _onPlaceSelected(lat, lng);
-              },
-              itemClick: (prediction) {
-                _searchController.text = prediction.description!;
-                FocusScope.of(context).unfocus();
-              },
             ),
-          ),
-          Expanded(
-            child: GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(
-                target: _initialPosition,
-                zoom: 12,
+            Expanded(
+              child: GoogleMap(
+                onMapCreated: _onMapCreated,
+                initialCameraPosition: CameraPosition(
+                  target: _currentPosition ?? _initialPosition,
+                  zoom: 12,
+                ),
+                markers: _markers,
+                polylines: _polylines,
+                myLocationEnabled: true,
+                myLocationButtonEnabled: true,
               ),
-              markers: _markers,
-              polylines: _polylines,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

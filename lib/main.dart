@@ -24,6 +24,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'GoYatri',
       initialRoute: AppRoutes.mappage,
       getPages: AppRoutes.routes,
