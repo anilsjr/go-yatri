@@ -1,246 +1,90 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_places_flutter/google_places_flutter.dart';
-import 'package:dio/dio.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-import 'package:goyatri/core/util/app_constant.dart' show AppConstant;
-import 'package:permission_handler/permission_handler.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
+import '../../presentaion/controller/map_controller.dart';
 
-class MapScreen extends StatefulWidget {
+class MapScreen extends StatelessWidget {
   const MapScreen({super.key});
+
   @override
-  State<MapScreen> createState() => _MapScreenState();
+  Widget build(BuildContext context) {
+    return const _MapScreenBody();
+  }
 }
 
-class _MapScreenState extends State<MapScreen> {
-  late BitmapDescriptor _markerIconGreen;
-  late BitmapDescriptor _markerIconRed;
-  late GoogleMapController mapController;
-  final String googleApiKey = 'AIzaSyBIJfuTJME0jr6ubJCNuDK9oUEHMWNrzEY';
-  LatLng? _currentPosition;
-
-  LatLng _initialPosition = AppConstant.initialPosition;
-  // Delhi
-  Set<Marker> _markers = {};
-  Set<Polyline> _polylines = {};
-  List<LatLng> _polylineCoordinates = [];
-
-  final TextEditingController _searchController = TextEditingController();
-  String? _mapStyle;
+class _MapScreenBody extends StatefulWidget {
+  const _MapScreenBody();
 
   @override
-  void initState() {
-    super.initState();
-    _searchController.addListener(() {
-      setState(() {});
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _loadMapStyle();
-      _getCurrentLocation();
-      _checkLocationPermission();
-    });
-    BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(devicePixelRatio: 2.5),
-      'assets/icons/red_marker.png',
-    ).then((onValue) {
-      _markerIconRed = onValue;
-    });
+  State<_MapScreenBody> createState() => _MapScreenBodyState();
+}
 
-    BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(devicePixelRatio: 2.5),
-      'assets/icons/green_marker.png',
-    ).then((onValue) {
-      _markerIconGreen = onValue;
-    });
-  }
+class _MapScreenBodyState extends State<_MapScreenBody> {
+  final TextEditingController _searchController = TextEditingController();
 
-  Future<void> _loadMapStyle() async {
-    _mapStyle = await DefaultAssetBundle.of(
-      context,
-    ).loadString(AppConstant.mapStylePath);
-  }
-
-  Future<void> _getCurrentLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      await Geolocator.openLocationSettings();
-      return;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.deniedForever) {
-        return;
-      }
-    }
-
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-
-    setState(() {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-      _initialPosition = _currentPosition!;
-      _markers.add(
-        Marker(
-          markerId: MarkerId('current'),
-          position: _currentPosition!,
-          icon: _markerIconGreen,
-        ),
-      );
-
-      // Move camera to current location
-      mapController.animateCamera(
-        CameraUpdate.newLatLngZoom(_currentPosition!, 14),
-      );
-    });
-  }
-
-  Future<void> _checkLocationPermission() async {
-    if (await Permission.location.request().isGranted) {
-      // Permission granted
-    } else {
-      await Permission.location.request();
-    }
-  }
-
-  void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-    if (_mapStyle != null) {
-      mapController.setMapStyle(_mapStyle);
-    }
-    setState(() {
-      _markers.add(
-        Marker(
-          markerId: MarkerId('start'),
-          position: _currentPosition ?? _initialPosition,
-          icon: _markerIconGreen,
-        ),
-      );
-    });
-  }
-
-  Future<void> _drawRoute(LatLng start, LatLng end) async {
-    final Dio dio = Dio();
-    final url =
-        'https://maps.googleapis.com/maps/api/directions/json?origin=${start.latitude},${start.longitude}&destination=${end.latitude},${end.longitude}&mode=driving&key=$googleApiKey';
-
-    print("Fetching route from: $url");
-
-    try {
-      final response = await dio.get(url);
-      if (response.statusCode == 200) {
-        final data = response.data;
-
-        if (data['routes'].isNotEmpty) {
-          _polylineCoordinates.clear();
-
-          // Get all steps from all legs
-          final legs = data['routes'][0]['legs'];
-          for (var leg in legs) {
-            final steps = leg['steps'];
-            for (var step in steps) {
-              final points = step['polyline']['points'];
-              List<PointLatLng> result = PolylinePoints.decodePolyline(points);
-
-              result.forEach((point) {
-                _polylineCoordinates.add(
-                  LatLng(point.latitude, point.longitude),
-                );
-              });
-            }
-          }
-
-          setState(() {
-            _polylines.clear();
-            _polylines.add(
-              Polyline(
-                polylineId: PolylineId('route'),
-                points: _polylineCoordinates,
-                width: 5,
-                color: Colors.blue,
-                patterns: [], // Solid line
-              ),
-            );
-          });
-        }
-      }
-    } catch (e) {
-      print("Error fetching route: $e");
-    }
-  }
-
-  void _onPlaceSelected(double lat, double lng) {
-    LatLng selected = LatLng(lat, lng);
-
-    setState(() {
-      _markers.add(
-        Marker(
-          markerId: MarkerId('destination'),
-          position: selected,
-          icon: _markerIconRed,
-        ),
-      );
-    });
-
-    mapController.animateCamera(CameraUpdate.newLatLngZoom(selected, 14));
-    // _drawRoute(_initialPosition, selected);
-    _drawRoute(_currentPosition!, selected);
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // appBar: AppBar(title: Text('Google Maps with Search')),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: GooglePlaceAutoCompleteTextField(
-                textEditingController: _searchController,
-                googleAPIKey: googleApiKey,
-                inputDecoration: InputDecoration(
-                  hintText: 'Search Places',
-                  contentPadding: EdgeInsets.symmetric(
-                    // vertical: 10,
-                    horizontal: 12,
+    return Consumer<MapController>(
+      builder: (context, controller, child) {
+        return Scaffold(
+          resizeToAvoidBottomInset: false,
+          body: SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
                   ),
-                  border: InputBorder.none,
+                  child: GooglePlaceAutoCompleteTextField(
+                    textEditingController: _searchController,
+                    googleAPIKey: controller.googleApiKey,
+                    inputDecoration: const InputDecoration(
+                      hintText: 'Search Places',
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                      border: InputBorder.none,
+                    ),
+                    debounceTime: 600,
+                    countries: ["in"],
+                    isLatLngRequired: true,
+                    getPlaceDetailWithLatLng: (prediction) {
+                      final lat = double.parse(prediction.lat!);
+                      final lng = double.parse(prediction.lng!);
+                      controller.onPlaceSelected(lat, lng);
+                    },
+                    itemClick: (prediction) {
+                      _searchController.text = prediction.description!;
+                      FocusScope.of(context).unfocus();
+                    },
+                  ),
                 ),
-                debounceTime: 600,
-                countries: ["in"],
-                isLatLngRequired: true,
-                getPlaceDetailWithLatLng: (prediction) {
-                  final lat = double.parse(prediction.lat!);
-                  final lng = double.parse(prediction.lng!);
-                  _onPlaceSelected(lat, lng);
-                },
-                itemClick: (prediction) {
-                  _searchController.text = prediction.description!;
-                  FocusScope.of(context).unfocus();
-                },
-              ),
-            ),
-            Expanded(
-              child: GoogleMap(
-                onMapCreated: _onMapCreated,
-                initialCameraPosition: CameraPosition(
-                  target: _currentPosition ?? _initialPosition,
-                  zoom: 12,
+                Expanded(
+                  child: GoogleMap(
+                    onMapCreated: controller.onMapCreated,
+                    initialCameraPosition: CameraPosition(
+                      target:
+                          controller.currentPosition ??
+                          controller.initialPosition,
+                      zoom: 12,
+                    ),
+                    markers: controller.markers,
+                    polylines: controller.polylines,
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: true,
+                  ),
                 ),
-                markers: _markers,
-                polylines: _polylines,
-                myLocationEnabled: true,
-                myLocationButtonEnabled: true,
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
