@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:goyatri/features/auth/presentaion/controller/login_controller.dart';
+import 'package:goyatri/features/auth-firebase/presentaion/controller/login_controller.dart';
 import 'package:provider/provider.dart';
 
 class LoginPage extends StatefulWidget {
@@ -9,9 +9,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _phoneController = TextEditingController(
-    text: '+918889544744',
-  );
+  final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
 
   @override
@@ -28,14 +26,11 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             TextField(
               controller: _phoneController,
-              readOnly: loginController.otpSent,
-              keyboardType: TextInputType.phone,
               decoration: InputDecoration(labelText: 'Phone Number'),
             ),
             loginController.otpSent
                 ? TextField(
                     controller: _otpController,
-                    keyboardType: TextInputType.number,
                     decoration: InputDecoration(labelText: 'OTP'),
                   )
                 : Container(),
