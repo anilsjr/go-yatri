@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui' as ui;
-// import 'dart:typed_data';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -77,12 +77,12 @@ class MapController extends ChangeNotifier {
     );
 
     final Uint8List autoRickshawIconBytes = await _getBytesFromAsset(
-      'assets/icons/auto.png',
+      'assets/icons/auto_marker.png',
       100,
     );
 
     final Uint8List bikeIconBytes = await _getBytesFromAsset(
-      'assets/icons/bike.png',
+      'assets/icons/bike_marker.png',
       100,
     );
 
@@ -284,7 +284,7 @@ class MapController extends ChangeNotifier {
       }
 
       // Generate nearby transport markers whether route drawing succeeds or not
-      await generateNearbyTransportMarkers(markerIconTaxiAuto);
+      await generateNearbyTransportMarkers(markerIconBike);
     } catch (e) {
       if (kDebugMode) {
         print('Error drawing route: $e');
@@ -383,13 +383,30 @@ class MapController extends ChangeNotifier {
       (marker) => marker.markerId.value.startsWith('nearby_transport'),
     );
 
-    // Get nearby places using Google Places API (roads)
+    // For debugging: Add at least one marker to verify it works
+    markers.add(
+      Marker(
+        markerId: MarkerId('nearby_transport_debug'),
+        position: LatLng(
+          currentPosition!.latitude + 0.001,
+          currentPosition!.longitude + 0.001,
+        ),
+        icon: riderMarker,
+        infoWindow: InfoWindow(
+          title: 'Debug Marker',
+          snippet: 'Test marker to verify functionality',
+        ),
+      ),
+    );
+
+    // Get nearby places using Google Places API specifically for roads
     final Dio dio = Dio();
     final url =
         'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
         '?location=${currentPosition!.latitude},${currentPosition!.longitude}'
         '&radius=1500' // 1.5km
-        '&type=road'
+        '&type=route' // 'route' is more specific for roads than 'road'
+        '&rankby=distance' // Prioritize closer roads
         '&key=$googleApiKey';
 
     try {
@@ -406,30 +423,42 @@ class MapController extends ChangeNotifier {
           for (var place in data['results']) {
             if (count >= numMarkers) break;
 
-            // Get coordinates from the place
-            final lat = place['geometry']['location']['lat'];
-            final lng = place['geometry']['location']['lng'];
+            // Check if we have valid location data
+            if (place['geometry'] != null &&
+                place['geometry']['location'] != null &&
+                place['geometry']['location']['lat'] != null &&
+                place['geometry']['location']['lng'] != null) {
+              // Get coordinates from the place
+              final lat = place['geometry']['location']['lat'];
+              final lng = place['geometry']['location']['lng'];
 
-            // Calculate a slightly offset position to ensure it's on the road side
-            final offsetFactor = 0.00008; // Small offset
-            final offsetLat =
-                lat + (random % 100 - 50) / 1000000 * offsetFactor;
-            final offsetLng =
-                lng + (random % 100 - 50) / 1000000 * offsetFactor;
+              // Calculate distance from current position
+              final distance = Geolocator.distanceBetween(
+                currentPosition!.latitude,
+                currentPosition!.longitude,
+                lat,
+                lng,
+              );
 
-            // Add the marker using the provided rider marker
-            markers.add(
-              Marker(
-                rotation: Random().nextDouble() * 360, // Random rotation
-                markerId: MarkerId('nearby_transport_${count}'),
-                position: LatLng(offsetLat, offsetLng),
-                icon: riderMarker,
-                infoWindow: InfoWindow(
-                  title: 'Vehicle available',
-                  snippet: 'Tap to book',
-                ),
-              ),
-            );
+              // Only use places within 1.5km
+              if (distance <= 1500) {
+                // Add the marker using the provided rider marker
+                markers.add(
+                  Marker(
+                    rotation: Random().nextDouble() * 360, // Random rotation
+                    markerId: MarkerId('nearby_transport_${count}'),
+                    position: LatLng(lat, lng),
+                    icon: riderMarker,
+                    infoWindow: InfoWindow(
+                      title: 'Vehicle available',
+                      snippet: 'Distance: ${distance.toStringAsFixed(0)}m',
+                    ),
+                  ),
+                );
+
+                count++;
+              }
+            }
 
             count++;
           }
@@ -480,6 +509,9 @@ class MapController extends ChangeNotifier {
 
       // Fallback to purely random markers if API call fails
       _generateRandomMarkers(riderMarker);
+    } finally {
+      // Make sure we notify listeners even if there was an error
+      notifyListeners();
     }
   }
 
@@ -488,36 +520,44 @@ class MapController extends ChangeNotifier {
     if (currentPosition == null) return;
 
     // Generate 5-8 random markers
-    final random = DateTime.now().millisecondsSinceEpoch;
-    final numMarkers = 5 + (random % 4); // Random number between 5-8
+    final random = Random();
+    final numMarkers = 5 + random.nextInt(4); // Random number between 5-8
 
+    // Generate some simulated "road" directions from the current position
+    // These angles represent typical road directions (N, NE, E, SE, S, SW, W, NW)
+    final roadAngles = [0, 45, 90, 135, 180, 225, 270, 315];
+    
     for (int i = 0; i < numMarkers; i++) {
-      // Generate random angle and distance (within 1.5km)
-      final angle = (random + i * 50) % 360 * pi / 180;
-      final distance = (random + i * 30) % 1500; // Random distance up to 1.5km
-
+      // Pick a random road angle and add some small randomization
+      final baseAngle = roadAngles[random.nextInt(roadAngles.length)];
+      final angle = (baseAngle + random.nextInt(20) - 10) * pi / 180; // +/- 10 degrees variation
+      
+      // Generate a random distance between 200m and 1500m
+      // More likely to be 500-1000m from user for better visibility
+      final distance = 200 + random.nextInt(1300);
+      
       // Convert to latitude/longitude offset
       // Approximately 111,111 meters per degree of latitude
-      // Longitude degrees vary based on latitude
       final latOffset = distance * cos(angle) / 111111;
-      final lngOffset =
-          distance *
-          sin(angle) /
+      
+      // Longitude degrees vary based on latitude
+      // cos(lat) gives the scaling factor
+      final lngOffset = distance * sin(angle) / 
           (111111 * cos(currentPosition!.latitude * pi / 180));
-
+      
       final newLat = currentPosition!.latitude + latOffset;
       final newLng = currentPosition!.longitude + lngOffset;
 
       // Add the marker
       markers.add(
         Marker(
-          rotation: Random().nextDouble() * 360, // Random rotation
+          rotation: random.nextDouble() * 360, // Random rotation
           markerId: MarkerId('nearby_transport_${i}'),
           position: LatLng(newLat, newLng),
           icon: riderMarker,
           infoWindow: InfoWindow(
             title: 'Vehicle available',
-            snippet: 'Tap to book',
+            snippet: 'Distance: ~${distance}m',
           ),
         ),
       );
