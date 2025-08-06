@@ -126,24 +126,24 @@ class _MapScreenBodyState extends State<_MapScreenBody> {
                           icon: const Icon(Icons.my_location),
                         ),
                       ),
-                      Positioned(
-                        bottom: 16,
-                        left: 16,
-                        child: IconButton(
-                          iconSize: 20,
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            shape: const CircleBorder(),
-                          ),
-                          onPressed: () {
-                            controller.generateNearbyTransportMarkers(
-                              controller.markerIconTaxiAuto,
-                            );
-                          },
-                          tooltip: "Show Nearby Transport",
-                          icon: const Icon(Icons.local_taxi),
-                        ),
-                      ),
+                      // Positioned(
+                      //   bottom: 16,
+                      //   left: 16,
+                      //   child: IconButton(
+                      //     iconSize: 20,
+                      //     style: IconButton.styleFrom(
+                      //       backgroundColor: Colors.white,
+                      //       shape: const CircleBorder(),
+                      //     ),
+                      //     onPressed: () {
+                      //       controller.generateNearbyTransportMarkers(
+                      //         controller.markerIconTaxiAuto,
+                      //       );
+                      //     },
+                      //     tooltip: "Show Nearby Transport",
+                      //     icon: const Icon(Icons.local_taxi),
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),

@@ -41,7 +41,7 @@ class MapController extends ChangeNotifier {
 
       // Generate nearby transport markers after getting current location
       if (currentPosition != null) {
-        await generateNearbyTransportMarkers(markerIconTaxiAuto);
+        // await generateNearbyTransportMarkers(markerIconTaxiAuto);
       }
     } catch (e) {
       if (kDebugMode) {
@@ -284,7 +284,7 @@ class MapController extends ChangeNotifier {
       }
 
       // Generate nearby transport markers whether route drawing succeeds or not
-      await generateNearbyTransportMarkers(markerIconBike);
+      // await generateNearbyTransportMarkers(markerIconBike);
     } catch (e) {
       if (kDebugMode) {
         print('Error drawing route: $e');
@@ -328,6 +328,8 @@ class MapController extends ChangeNotifier {
         }
       });
     }
+
+    plotRandomRiderMarkers(markerIconTaxiCar);
   }
 
   void moveToCurrentLocation() {
@@ -366,201 +368,59 @@ class MapController extends ChangeNotifier {
     );
   }
 
-  /// Generates and plots random markers near the user's current location
-  /// representing nearby transportation options within 1.5km range
-  Future<void> generateNearbyTransportMarkers(
-    BitmapDescriptor riderMarker,
-  ) async {
-    if (currentPosition == null) {
-      await getCurrentLocation();
-      if (currentPosition == null) return;
+  List<LatLng> generateRandomRiderMarkers(LatLng userLocation) {
+    final random = Random();
+    final int count = 3 + random.nextInt(3); // 3 to 5 markers
+    const double radiusInKm = 1.5;
+    const double earthRadius = 6371.0;
+
+    List<LatLng> randomMarkers = [];
+
+    for (int i = 0; i < count; i++) {
+      // Generate random distance and bearing
+      final double distanceKm = random.nextDouble() * radiusInKm;
+      final double bearing = random.nextDouble() * 2 * pi;
+
+      // Convert distance to angular distance
+      final double angularDistance = distanceKm / earthRadius;
+
+      final double lat1 = userLocation.latitude * pi / 180;
+      final double lon1 = userLocation.longitude * pi / 180;
+
+      final double lat2 = asin(
+        sin(lat1) * cos(angularDistance) +
+            cos(lat1) * sin(angularDistance) * cos(bearing),
+      );
+
+      final double lon2 =
+          lon1 +
+          atan2(
+            sin(bearing) * sin(angularDistance) * cos(lat1),
+            cos(angularDistance) - sin(lat1) * sin(lat2),
+          );
+
+      final newLat = lat2 * 180 / pi;
+      final newLon = lon2 * 180 / pi;
+
+      randomMarkers.add(LatLng(newLat, newLon));
     }
 
-    // Clear any existing nearby transport markers
-    markers.removeWhere(
-      (marker) => marker.markerId.value.startsWith('nearby_transport'),
-    );
-
-    // For debugging: Add at least one marker to verify it works
-    markers.add(
-      Marker(
-        markerId: MarkerId('nearby_transport_debug'),
-        position: LatLng(
-          currentPosition!.latitude + 0.001,
-          currentPosition!.longitude + 0.001,
-        ),
-        icon: riderMarker,
-        infoWindow: InfoWindow(
-          title: 'Debug Marker',
-          snippet: 'Test marker to verify functionality',
-        ),
-      ),
-    );
-
-    // Get nearby places using Google Places API specifically for roads
-    final Dio dio = Dio();
-    final url =
-        'https://maps.googleapis.com/maps/api/place/nearbysearch/json'
-        '?location=${currentPosition!.latitude},${currentPosition!.longitude}'
-        '&radius=1500' // 1.5km
-        '&type=route' // 'route' is more specific for roads than 'road'
-        '&rankby=distance' // Prioritize closer roads
-        '&key=$googleApiKey';
-
-    try {
-      final response = await dio.get(url);
-      if (response.statusCode == 200) {
-        final data = response.data;
-
-        if (data['results'] != null && data['results'].isNotEmpty) {
-          // Limit to 5-8 markers
-          final random = DateTime.now().millisecondsSinceEpoch;
-          final numMarkers = 5 + (random % 4); // Random number between 5-8
-
-          int count = 0;
-          for (var place in data['results']) {
-            if (count >= numMarkers) break;
-
-            // Check if we have valid location data
-            if (place['geometry'] != null &&
-                place['geometry']['location'] != null &&
-                place['geometry']['location']['lat'] != null &&
-                place['geometry']['location']['lng'] != null) {
-              // Get coordinates from the place
-              final lat = place['geometry']['location']['lat'];
-              final lng = place['geometry']['location']['lng'];
-
-              // Calculate distance from current position
-              final distance = Geolocator.distanceBetween(
-                currentPosition!.latitude,
-                currentPosition!.longitude,
-                lat,
-                lng,
-              );
-
-              // Only use places within 1.5km
-              if (distance <= 1500) {
-                // Add the marker using the provided rider marker
-                markers.add(
-                  Marker(
-                    rotation: Random().nextDouble() * 360, // Random rotation
-                    markerId: MarkerId('nearby_transport_${count}'),
-                    position: LatLng(lat, lng),
-                    icon: riderMarker,
-                    infoWindow: InfoWindow(
-                      title: 'Vehicle available',
-                      snippet: 'Distance: ${distance.toStringAsFixed(0)}m',
-                    ),
-                  ),
-                );
-
-                count++;
-              }
-            }
-
-            count++;
-          }
-
-          // If we didn't get enough places from the API, generate random positions
-          while (count < numMarkers) {
-            // Generate a random position within 1.5km
-            final double radius = 1500; // meters
-            final double radiusInDegrees =
-                radius / 111000; // approx 111km per degree
-
-            final random = DateTime.now().millisecondsSinceEpoch + count;
-            final u = random / 2147483647; // random between 0 and 1
-            final v = random % 1000 / 1000; // random between 0 and 1
-
-            final w = radiusInDegrees * sqrt(u);
-            final t = 2 * pi * v;
-            final x = w * cos(t);
-            final y = w * sin(t);
-
-            final newLat = currentPosition!.latitude + y;
-            final newLng = currentPosition!.longitude + x;
-
-            // Add the marker using the provided rider marker
-            markers.add(
-              Marker(
-                rotation: Random().nextDouble() * 360, // Random rotation
-                markerId: MarkerId('nearby_transport_${count}'),
-                position: LatLng(newLat, newLng),
-                icon: riderMarker,
-                infoWindow: InfoWindow(
-                  title: 'Vehicle available',
-                  snippet: 'Tap to book',
-                ),
-              ),
-            );
-
-            count++;
-          }
-
-          notifyListeners();
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error generating nearby transport markers: $e');
-      }
-
-      // Fallback to purely random markers if API call fails
-      _generateRandomMarkers(riderMarker);
-    } finally {
-      // Make sure we notify listeners even if there was an error
-      notifyListeners();
-    }
+    return randomMarkers;
   }
 
-  /// Fallback method to generate random markers without API
-  void _generateRandomMarkers(BitmapDescriptor riderMarker) {
-    if (currentPosition == null) return;
+  plotRandomRiderMarkers(BitmapDescriptor riderMarkerIcon) {
+    final randomMarkers = generateRandomRiderMarkers(currentPosition!);
 
-    // Generate 5-8 random markers
-    final random = Random();
-    final numMarkers = 5 + random.nextInt(4); // Random number between 5-8
-
-    // Generate some simulated "road" directions from the current position
-    // These angles represent typical road directions (N, NE, E, SE, S, SW, W, NW)
-    final roadAngles = [0, 45, 90, 135, 180, 225, 270, 315];
-
-    for (int i = 0; i < numMarkers; i++) {
-      // Pick a random road angle and add some small randomization
-      final baseAngle = roadAngles[random.nextInt(roadAngles.length)];
-      final angle =
-          (baseAngle + random.nextInt(20) - 10) *
-          pi /
-          180; // +/- 10 degrees variation
-
-      // Generate a random distance between 200m and 1500m
-      // More likely to be 500-1000m from user for better visibility
-      final distance = 200 + random.nextInt(1300);
-
-      // Convert to latitude/longitude offset
-      // Approximately 111,111 meters per degree of latitude
-      final latOffset = distance * cos(angle) / 111111;
-
-      // Longitude degrees vary based on latitude
-      // cos(lat) gives the scaling factor
-      final lngOffset =
-          distance *
-          sin(angle) /
-          (111111 * cos(currentPosition!.latitude * pi / 180));
-
-      final newLat = currentPosition!.latitude + latOffset;
-      final newLng = currentPosition!.longitude + lngOffset;
-
-      // Add the marker
+    for (int i = 0; i < randomMarkers.length; i++) {
       markers.add(
         Marker(
-          rotation: random.nextDouble() * 360, // Random rotation
-          markerId: MarkerId('nearby_transport_${i}'),
-          position: LatLng(newLat, newLng),
-          icon: riderMarker,
+          markerId: MarkerId('rider_$i'),
+          rotation: Random().nextDouble() * 360,
+          position: randomMarkers[i],
+          icon: riderMarkerIcon,
           infoWindow: InfoWindow(
-            title: 'Vehicle available',
-            snippet: 'Distance: ~${distance}m',
+            title: 'Rider $i',
+            snippet: 'Random rider location',
           ),
         ),
       );
