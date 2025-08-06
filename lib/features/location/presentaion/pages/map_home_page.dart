@@ -144,6 +144,25 @@ class _MapScreenBodyState extends State<_MapScreenBody> {
                           icon: const Icon(Icons.local_taxi),
                         ),
                       ),
+                      // Animated markers button
+                      Positioned(
+                        bottom: 60,
+                        left: 60,
+                        child: IconButton(
+                          iconSize: 20,
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: const CircleBorder(),
+                          ),
+                          onPressed: () {
+                            controller.generateAnimatedMarkers(
+                              controller.markerIconTaxiCar,
+                            );
+                          },
+                          tooltip: "Show Moving Vehicles",
+                          icon: const Icon(Icons.directions_car),
+                        ),
+                      ),
                     ],
                   ),
                 ),
