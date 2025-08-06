@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:ui' as ui;
+// import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -28,12 +31,23 @@ class MapController extends ChangeNotifier {
   MapController(this.context);
 
   Future<void> init() async {
-    await _loadMapStyle();
-    await _loadMarkerIcons();
-    await getCurrentLocation();
-    await checkLocationPermission();
+    try {
+      // Load resources in parallel for efficiency
+      await Future.wait([_loadMapStyle(), _loadMarkerIcons()]);
 
-    // Generate nearby transport markers after getting current location
+      // Check location permissions and get current location
+      await checkLocationPermission();
+      await getCurrentLocation();
+
+      // Generate nearby transport markers after getting current location
+      if (currentPosition != null) {
+        await generateNearbyTransportMarkers(markerIconTaxiAuto);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error initializing map controller: $e');
+      }
+    }
   }
 
   Future<void> _loadMapStyle() async {
@@ -44,25 +58,49 @@ class MapController extends ChangeNotifier {
 
   Future<void> _loadMarkerIcons() async {
     markerIconRed = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(devicePixelRatio: 1),
+      ImageConfiguration(devicePixelRatio: 2.5),
       'assets/icons/red_marker.png',
     );
     markerIconGreen = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(devicePixelRatio: 1),
+      ImageConfiguration(devicePixelRatio: 2.5),
       'assets/icons/green_marker.png',
     );
     markerIconBike = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(devicePixelRatio: 1),
+      ImageConfiguration(devicePixelRatio: 2.5),
       'assets/icons/bike_marker.png',
     );
-    markerIconTaxiCar = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(devicePixelRatio: 1, size: Size(10, 48)),
+
+    // Load the taxi icon with a fixed size
+    final Uint8List taxiIconBytes = await _getBytesFromAsset(
       'assets/icons/taxi.png',
+      100,
     );
-    markerIconTaxiAuto = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(devicePixelRatio: 1),
-      'assets/icons/auto3_marker.png',
+
+    final Uint8List autoRickshawIconBytes = await _getBytesFromAsset(
+      'assets/icons/auto.png',
+      100,
     );
+
+    final Uint8List bikeIconBytes = await _getBytesFromAsset(
+      'assets/icons/bike.png',
+      100,
+    );
+
+    markerIconTaxiCar = BitmapDescriptor.fromBytes(taxiIconBytes);
+    markerIconTaxiAuto = BitmapDescriptor.fromBytes(autoRickshawIconBytes);
+    markerIconBike = BitmapDescriptor.fromBytes(bikeIconBytes);
+  }
+
+  Future<Uint8List> _getBytesFromAsset(String path, int width) async {
+    ByteData data = await rootBundle.load(path);
+    ui.Codec codec = await ui.instantiateImageCodec(
+      data.buffer.asUint8List(),
+      targetWidth: width,
+    );
+    ui.FrameInfo fi = await codec.getNextFrame();
+    return (await fi.image.toByteData(
+      format: ui.ImageByteFormat.png,
+    ))!.buffer.asUint8List();
   }
 
   Future<void> getCurrentLocation() async {
@@ -80,31 +118,73 @@ class MapController extends ChangeNotifier {
       }
     }
 
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-
-    currentPosition = LatLng(position.latitude, position.longitude);
-    // markers.add(
-    //   Marker(
-    //     markerId: MarkerId('current'),
-    //     position: currentPosition!,
-    //     icon: markerIconGreen,
-    //   ),
-    // );
-    notifyListeners();
-    if (mapController != null) {
-      mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(currentPosition!, 14),
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
       );
+
+      currentPosition = LatLng(position.latitude, position.longitude);
+
+      // Add marker for current location
+      // Remove existing 'start' marker if it exists
+      markers.removeWhere((marker) => marker.markerId.value == 'start');
+
+      markers.add(
+        Marker(
+          markerId: MarkerId('start'),
+          position: currentPosition!,
+          icon: markerIconGreen,
+          infoWindow: InfoWindow(
+            title: 'Your Location',
+            snippet: 'You are here',
+          ),
+        ),
+      );
+
+      notifyListeners();
+      if (mapController != null) {
+        mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(currentPosition!, 14),
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting current location: $e');
+      }
     }
   }
 
   Future<void> checkLocationPermission() async {
-    if (await Permission.location.request().isGranted) {
-      // Permission granted
-    } else {
-      await Permission.location.request();
+    try {
+      var status = await Permission.location.status;
+
+      if (status.isDenied) {
+        // Request permission
+        status = await Permission.location.request();
+
+        if (status.isPermanentlyDenied) {
+          // The user opted to never again see the permission request dialog
+          if (kDebugMode) {
+            print(
+              'Location permission permanently denied. Please enable in settings.',
+            );
+          }
+          // You might want to show a dialog here instructing the user to enable location in settings
+        }
+      }
+
+      // Even if permission was previously granted, ensure location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (kDebugMode) {
+          print('Location services disabled. Opening settings...');
+        }
+        await Geolocator.openLocationSettings();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking location permission: $e');
+      }
     }
   }
 
@@ -113,86 +193,142 @@ class MapController extends ChangeNotifier {
     if (mapStyle != null) {
       mapController!.setMapStyle(mapStyle);
     }
+
+    // We'll handle markers in getCurrentLocation, no need to add here
+    // as it could create duplicate markers
+
+    // If we already have the current position, center the map on it
     if (currentPosition != null) {
-      markers.add(
-        Marker(
-          markerId: MarkerId('start'),
-          position: currentPosition!,
-          icon: markerIconGreen,
-        ),
+      mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(currentPosition!, 14),
       );
+    } else {
+      // If we don't have the position yet, try to get it
+      getCurrentLocation();
     }
+
     notifyListeners();
   }
 
   Future<void> drawRoute(LatLng start, LatLng end) async {
+    // Clear existing route
+    polylineCoordinates.clear();
+    polylines.clear();
+    notifyListeners();
+
     final Dio dio = Dio();
     final url =
         'https://maps.googleapis.com/maps/api/directions/json?origin=${start.latitude},${start.longitude}&destination=${end.latitude},${end.longitude}&mode=driving&key=$googleApiKey';
 
     try {
+      if (kDebugMode) {
+        print(
+          'Requesting directions from: ${start.latitude},${start.longitude} to ${end.latitude},${end.longitude}',
+        );
+      }
+
       final response = await dio.get(url);
       if (response.statusCode == 200) {
         final data = response.data;
-        if (kDebugMode) {
-          print(
-            'Response: ==================================================================================================================$data',
-          );
-          print(
-            'Response: ==================================================================================================================end ---$url',
-          );
-        }
-        if (data['routes'].isNotEmpty) {
-          polylineCoordinates.clear();
 
+        if (kDebugMode) {
+          print('Response status: ${data['status']}');
+        }
+
+        if (data['routes'].isNotEmpty) {
           final legs = data['routes'][0]['legs'];
           for (var leg in legs) {
             final steps = leg['steps'];
             for (var step in steps) {
               final points = step['polyline']['points'];
               List<PointLatLng> result = PolylinePoints.decodePolyline(points);
-              result.forEach((point) {
+              for (var point in result) {
                 polylineCoordinates.add(
                   LatLng(point.latitude, point.longitude),
                 );
-              });
+              }
             }
           }
 
-          polylines.clear();
-          polylines.add(
-            Polyline(
-              polylineId: PolylineId('route'),
-              points: polylineCoordinates,
-              width: 5,
-              color: Colors.blue,
-              patterns: [],
-            ),
+          if (polylineCoordinates.isNotEmpty) {
+            polylines.add(
+              Polyline(
+                polylineId: PolylineId('route'),
+                points: polylineCoordinates,
+                width: 5,
+                color: Colors.blue,
+                patterns: [],
+              ),
+            );
+
+            // Fit the map to show the entire route
+            fitCameraToPolyline();
+
+            notifyListeners();
+          } else {
+            if (kDebugMode) {
+              print('No polyline coordinates found in the response.');
+            }
+          }
+        } else {
+          if (kDebugMode) {
+            print('No routes found in the response.');
+          }
+        }
+      } else {
+        if (kDebugMode) {
+          print(
+            'Direction API request failed with status: ${response.statusCode}',
           );
-          notifyListeners();
         }
       }
-      await generateNearbyTransportMarkers(markerIconBike);
+
+      // Generate nearby transport markers whether route drawing succeeds or not
+      await generateNearbyTransportMarkers(markerIconTaxiAuto);
     } catch (e) {
-      // Handle error
+      if (kDebugMode) {
+        print('Error drawing route: $e');
+      }
+      // Still try to generate markers even if route drawing fails
+      await generateNearbyTransportMarkers(markerIconTaxiAuto);
     }
   }
 
   void onPlaceSelected(double lat, double lng) {
     LatLng selected = LatLng(lat, lng);
+
+    // Remove existing destination marker if it exists
+    markers.removeWhere((marker) => marker.markerId.value == 'destination');
+
+    // Add new destination marker
     markers.add(
       Marker(
         markerId: MarkerId('destination'),
         position: selected,
         icon: markerIconRed,
+        infoWindow: InfoWindow(
+          title: 'Destination',
+          snippet: 'Your destination',
+        ),
       ),
     );
+
     notifyListeners();
+
     if (mapController != null) {
       mapController!.animateCamera(CameraUpdate.newLatLngZoom(selected, 14));
     }
+
+    // Check if we have current position and draw route
     if (currentPosition != null) {
       drawRoute(currentPosition!, selected);
+    } else {
+      // If we don't have current position, try to get it first
+      getCurrentLocation().then((_) {
+        if (currentPosition != null) {
+          drawRoute(currentPosition!, selected);
+        }
+      });
     }
   }
 
@@ -234,7 +370,9 @@ class MapController extends ChangeNotifier {
 
   /// Generates and plots random markers near the user's current location
   /// representing nearby transportation options within 1.5km range
-  Future<void> generateNearbyTransportMarkers(dynamic riderMarker) async {
+  Future<void> generateNearbyTransportMarkers(
+    BitmapDescriptor riderMarker,
+  ) async {
     if (currentPosition == null) {
       await getCurrentLocation();
       if (currentPosition == null) return;
@@ -279,21 +417,15 @@ class MapController extends ChangeNotifier {
             final offsetLng =
                 lng + (random % 100 - 50) / 1000000 * offsetFactor;
 
-            // Select a random marker type
-            final markerType = riderMarker;
-
-            // Add the marker
+            // Add the marker using the provided rider marker
             markers.add(
               Marker(
                 rotation: Random().nextDouble() * 360, // Random rotation
-                markerId: MarkerId(
-                  'nearby_transport_${count}_${markerType['id']}',
-                ),
+                markerId: MarkerId('nearby_transport_${count}'),
                 position: LatLng(offsetLat, offsetLng),
-                icon: markerType['icon'] as BitmapDescriptor,
+                icon: riderMarker,
                 infoWindow: InfoWindow(
-                  title:
-                      '${markerType['id'].toString().toUpperCase()} available',
+                  title: 'Vehicle available',
                   snippet: 'Tap to book',
                 ),
               ),
@@ -321,21 +453,15 @@ class MapController extends ChangeNotifier {
             final newLat = currentPosition!.latitude + y;
             final newLng = currentPosition!.longitude + x;
 
-            // Select a random marker type
-            final markerType = riderMarker;
-
-            // Add the marker
+            // Add the marker using the provided rider marker
             markers.add(
               Marker(
                 rotation: Random().nextDouble() * 360, // Random rotation
-                markerId: MarkerId(
-                  'nearby_transport_${count}_${markerType['id']}',
-                ),
+                markerId: MarkerId('nearby_transport_${count}'),
                 position: LatLng(newLat, newLng),
-                icon: markerType['icon'] as BitmapDescriptor,
+                icon: riderMarker,
                 infoWindow: InfoWindow(
-                  title:
-                      '${markerType['id'].toString().toUpperCase()} available',
+                  title: 'Vehicle available',
                   snippet: 'Tap to book',
                 ),
               ),
@@ -353,20 +479,13 @@ class MapController extends ChangeNotifier {
       }
 
       // Fallback to purely random markers if API call fails
-      _generateRandomMarkers();
+      _generateRandomMarkers(riderMarker);
     }
   }
 
   /// Fallback method to generate random markers without API
-  void _generateRandomMarkers() {
+  void _generateRandomMarkers(BitmapDescriptor riderMarker) {
     if (currentPosition == null) return;
-
-    // List of marker types to use randomly
-    final markerTypes = [
-      {'id': 'bike', 'icon': markerIconBike},
-      {'id': 'taxi', 'icon': markerIconTaxiCar},
-      {'id': 'auto', 'icon': markerIconTaxiAuto},
-    ];
 
     // Generate 5-8 random markers
     final random = DateTime.now().millisecondsSinceEpoch;
@@ -389,17 +508,15 @@ class MapController extends ChangeNotifier {
       final newLat = currentPosition!.latitude + latOffset;
       final newLng = currentPosition!.longitude + lngOffset;
 
-      // Select a random marker type
-      final markerType = markerTypes[(random + i) % markerTypes.length];
-
       // Add the marker
       markers.add(
         Marker(
-          markerId: MarkerId('nearby_transport_${i}_${markerType['id']}'),
+          rotation: Random().nextDouble() * 360, // Random rotation
+          markerId: MarkerId('nearby_transport_${i}'),
           position: LatLng(newLat, newLng),
-          icon: markerType['icon'] as BitmapDescriptor,
+          icon: riderMarker,
           infoWindow: InfoWindow(
-            title: '${markerType['id'].toString().toUpperCase()} available',
+            title: 'Vehicle available',
             snippet: 'Tap to book',
           ),
         ),
