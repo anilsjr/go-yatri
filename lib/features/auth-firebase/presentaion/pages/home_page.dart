@@ -28,11 +28,11 @@ class HomePage extends StatelessWidget {
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(true),
-                      child: Text('Logout'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         foregroundColor: Colors.white,
                       ),
+                      child: Text('Logout'),
                     ),
                   ],
                 ),

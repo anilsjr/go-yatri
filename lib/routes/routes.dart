@@ -14,6 +14,9 @@ class AppRoutes {
     GetPage(name: home, page: () => HomePage()),
     GetPage(name: login, page: () => LoginPage()),
     GetPage(name: signup, page: () => SignupPage()),
-    GetPage(name: mappage, page: () => MapScreen()),
+    GetPage(
+      name: mappage,
+      page: () => MapScreen(),
+    ), // The class name should match what's exported from map_home_page.dart
   ];
 }
