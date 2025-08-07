@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
@@ -57,35 +58,33 @@ class MapController extends ChangeNotifier {
   }
 
   Future<void> _loadMarkerIcons() async {
-    markerIconRed = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(devicePixelRatio: 2.5),
-      'assets/icons/red_marker.png',
-    );
-    markerIconGreen = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(devicePixelRatio: 2.5),
+    final Uint8List greenIconBytes = await _getBytesFromAsset(
       'assets/icons/green_marker.png',
+      100,
     );
-    markerIconBike = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(devicePixelRatio: 2.5),
-      'assets/icons/bike_marker.png',
+
+    final Uint8List redIconBytes = await _getBytesFromAsset(
+      'assets/icons/red_marker.png',
+      100,
     );
 
     // Load the taxi icon with a fixed size
     final Uint8List taxiIconBytes = await _getBytesFromAsset(
       'assets/icons/taxi.png',
-      100,
+      60,
     );
 
     final Uint8List autoRickshawIconBytes = await _getBytesFromAsset(
       'assets/icons/auto_marker.png',
-      100,
+      60,
     );
 
     final Uint8List bikeIconBytes = await _getBytesFromAsset(
       'assets/icons/bike_marker.png',
-      100,
+      60,
     );
-
+    markerIconRed = BitmapDescriptor.fromBytes(redIconBytes);
+    markerIconGreen = BitmapDescriptor.fromBytes(greenIconBytes);
     markerIconTaxiCar = BitmapDescriptor.fromBytes(taxiIconBytes);
     markerIconTaxiAuto = BitmapDescriptor.fromBytes(autoRickshawIconBytes);
     markerIconBike = BitmapDescriptor.fromBytes(bikeIconBytes);
@@ -135,7 +134,7 @@ class MapController extends ChangeNotifier {
           position: currentPosition!,
           icon: markerIconGreen,
           infoWindow: InfoWindow(
-            title: 'Your Location',
+            title: 'Start Location',
             snippet: 'You are here',
           ),
         ),
@@ -255,8 +254,8 @@ class MapController extends ChangeNotifier {
               Polyline(
                 polylineId: PolylineId('route'),
                 points: polylineCoordinates,
-                width: 5,
-                color: Colors.blue,
+                width: 2,
+                color: Colors.black,
                 patterns: [],
               ),
             );
@@ -292,7 +291,7 @@ class MapController extends ChangeNotifier {
     }
   }
 
-  void onPlaceSelected(double lat, double lng) {
+  void onPlaceSelected(double lat, double lng, placeName) {
     LatLng selected = LatLng(lat, lng);
 
     // Remove existing destination marker if it exists
@@ -304,10 +303,7 @@ class MapController extends ChangeNotifier {
         markerId: MarkerId('destination'),
         position: selected,
         icon: markerIconRed,
-        infoWindow: InfoWindow(
-          title: 'Destination',
-          snippet: 'Your destination',
-        ),
+        infoWindow: InfoWindow(title: placeName).copyWith(titleParam: 'dsafsd'),
       ),
     );
 
@@ -371,7 +367,7 @@ class MapController extends ChangeNotifier {
   List<LatLng> generateRandomRiderMarkers(LatLng userLocation) {
     final random = Random();
     final int count = 3 + random.nextInt(3); // 3 to 5 markers
-    const double radiusInKm = 1.5;
+    const double radiusInKm = 2;
     const double earthRadius = 6371.0;
 
     List<LatLng> randomMarkers = [];
@@ -418,10 +414,10 @@ class MapController extends ChangeNotifier {
           rotation: Random().nextDouble() * 360,
           position: randomMarkers[i],
           icon: riderMarkerIcon,
-          infoWindow: InfoWindow(
-            title: 'Rider $i',
-            snippet: 'Random rider location',
-          ),
+          // infoWindow: InfoWindow(
+          //   title: 'Rider $i',
+          //   snippet: 'Random rider location',
+          // ),
         ),
       );
     }

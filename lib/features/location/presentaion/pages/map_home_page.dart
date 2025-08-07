@@ -58,7 +58,11 @@ class _MapScreenBodyState extends State<_MapScreenBody> {
                     getPlaceDetailWithLatLng: (prediction) {
                       final lat = double.parse(prediction.lat!);
                       final lng = double.parse(prediction.lng!);
-                      controller.onPlaceSelected(lat, lng);
+                      controller.onPlaceSelected(
+                        lat,
+                        lng,
+                        prediction.description,
+                      );
                       // Hide keyboard when place details are received
                       FocusScope.of(context).unfocus();
                     },
@@ -126,24 +130,8 @@ class _MapScreenBodyState extends State<_MapScreenBody> {
                           icon: const Icon(Icons.my_location),
                         ),
                       ),
-                      // Positioned(
-                      //   bottom: 16,
-                      //   left: 16,
-                      //   child: IconButton(
-                      //     iconSize: 20,
-                      //     style: IconButton.styleFrom(
-                      //       backgroundColor: Colors.white,
-                      //       shape: const CircleBorder(),
-                      //     ),
-                      //     onPressed: () {
-                      //       controller.generateNearbyTransportMarkers(
-                      //         controller.markerIconTaxiAuto,
-                      //       );
-                      //     },
-                      //     tooltip: "Show Nearby Transport",
-                      //     icon: const Icon(Icons.local_taxi),
-                      //   ),
-                      // ),
+
+                      //
                     ],
                   ),
                 ),
