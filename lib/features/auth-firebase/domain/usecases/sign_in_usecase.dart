@@ -1,14 +1,12 @@
 import 'package:goyatri/features/auth-firebase/domain/entities/auth_entity.dart';
 import 'package:goyatri/features/auth-firebase/domain/repositories/auth_repository.dart';
 
-class CheckUserAuth {
+class SignInUseCase {
   final AuthRepository repository;
 
-  CheckUserAuth(this.repository);
+  SignInUseCase(this.repository);
 
-  Future<AuthEntity?> call() async {
-    return await repository.getCurrentUser();
+  Future<AuthEntity> call(String email, String password) async {
+    return await repository.signInWithEmailAndPassword(email, password);
   }
-
-  Stream<AuthEntity?> get authStateChanges => repository.authStateChanges;
 }

@@ -6,10 +6,12 @@ import 'package:dio/dio.dart';
 import '../models/location_model.dart';
 import '../../domain/repositories/location_selection_repository.dart';
 
-class LocationRepositoryImpl implements LocationRepository {
+class LocationRepositoryImpl implements LocationSelectionRepository {
   final Dio _dio = Dio();
-  final String _googleApiKey = 'AIzaSyBIJfuTJME0jr6ubJCNuDK9oUEHMWNrzEY';
+  final String _googleApiKey =
+      'AIzaSyBIJfuTJME0jr6ubJCNuDK9oUEHMWNrzEY'; // Note: This should be moved to environment variables
   final String _storageKey = 'recent_locations';
+  final String _favoritesKey = 'favorite_locations';
 
   @override
   Future<List<LocationModel>> getRecentLocations() async {
@@ -171,5 +173,99 @@ class LocationRepositoryImpl implements LocationRepository {
       print('Error getting place details: $e');
       return null;
     }
+  }
+
+  @override
+  Future<LocationModel?> reverseGeocode(LatLng coordinates) async {
+    try {
+      final response = await _dio.get(
+        'https://maps.googleapis.com/maps/api/geocode/json',
+        queryParameters: {
+          'latlng': '${coordinates.latitude},${coordinates.longitude}',
+          'key': _googleApiKey,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data['status'] == 'OK') {
+        final results = response.data['results'] as List;
+        if (results.isNotEmpty) {
+          final result = results.first;
+
+          return LocationModel(
+            id:
+                result['place_id'] ??
+                DateTime.now().millisecondsSinceEpoch.toString(),
+            name: _extractLocationName(result),
+            address: result['formatted_address'] ?? '',
+            latitude: coordinates.latitude,
+            longitude: coordinates.longitude,
+            timestamp: DateTime.now(),
+          );
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error reverse geocoding: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<List<LocationModel>> getAutocompleteSuggestions(String query) async {
+    if (query.isEmpty) return [];
+
+    try {
+      final response = await _dio.get(
+        'https://maps.googleapis.com/maps/api/place/autocomplete/json',
+        queryParameters: {
+          'input': query,
+          'key': _googleApiKey,
+          'components': 'country:in',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final predictions = response.data['predictions'] as List;
+
+        return predictions.map((prediction) {
+          return LocationModel(
+            id: prediction['place_id'],
+            name:
+                prediction['structured_formatting']['main_text'] ??
+                prediction['description'],
+            address: prediction['description'],
+            latitude: 0.0, // Will be fetched when selected
+            longitude: 0.0, // Will be fetched when selected
+            timestamp: DateTime.now(),
+          );
+        }).toList();
+      }
+
+      return [];
+    } catch (e) {
+      print('Error getting autocomplete suggestions: $e');
+      return [];
+    }
+  }
+
+  String _extractLocationName(Map<String, dynamic> result) {
+    final addressComponents = result['address_components'] as List?;
+    if (addressComponents != null) {
+      for (final component in addressComponents) {
+        final types = List<String>.from(component['types'] ?? []);
+        if (types.contains('establishment') ||
+            types.contains('premise') ||
+            types.contains('point_of_interest')) {
+          return component['long_name'] ?? '';
+        }
+      }
+
+      // Fallback to first component
+      if (addressComponents.isNotEmpty) {
+        return addressComponents.first['long_name'] ?? 'Unknown Location';
+      }
+    }
+
+    return 'Unknown Location';
   }
 }

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:goyatri/features/home/presentation/widgets/home_app_bar.dart';
 import 'package:goyatri/features/home/presentation/widgets/explore_section.dart';
-import 'package:provider/provider.dart';
-import 'package:goyatri/features/auth-firebase/presentaion/controller/logout_controller.dart';
 import 'package:get/get.dart';
 import 'package:goyatri/routes/routes.dart';
 

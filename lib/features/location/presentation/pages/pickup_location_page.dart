@@ -79,7 +79,6 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
             children: [
               _buildCurrentLocationItem(provider),
               _buildSearchBar(provider),
-              _buildSelectOnMapButton(context, provider),
               Padding(
                 padding: const EdgeInsets.only(
                   left: 16.0,
@@ -187,57 +186,6 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
           filled: true,
           fillColor: Colors.grey[200],
           contentPadding: const EdgeInsets.symmetric(vertical: 10),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSelectOnMapButton(
-    BuildContext context,
-    LocationProvider provider,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: OutlinedButton.icon(
-        onPressed: () async {
-          // Navigate to map selection screen
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MapHomePage(
-                isPickupSelection: true,
-                initialLocation: provider.currentLocation,
-              ),
-            ),
-          );
-
-          if (result != null && result is LatLng) {
-            // Process the selected location from map
-            provider.createLocationFromLatLng(
-              result,
-              'Selected Location',
-              'Location selected on map',
-            );
-            Navigator.pop(context); // Return to previous screen
-          }
-        },
-        icon: const Icon(Icons.map_outlined, color: Colors.green, size: 18),
-        label: const Text(
-          'Select on map',
-          style: TextStyle(
-            color: Colors.green,
-            fontWeight: FontWeight.w500,
-            fontSize: 15,
-          ),
-        ),
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Colors.green),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          backgroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 48),
         ),
       ),
     );

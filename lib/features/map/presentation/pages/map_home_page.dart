@@ -68,57 +68,57 @@ class _MapHomePageState extends State<MapHomePage> {
 
   void _updateRouteIfNeeded() {
     // If this is a route view (both pickup and drop are provided)
-    if (widget.pickupLocation != null &&
-        widget.dropLocation != null &&
-        !_routeDrawn) {
-      final pickupLatLng = LatLng(
-        widget.pickupLocation!.latitude,
-        widget.pickupLocation!.longitude,
-      );
+    final pickupLatLng = LatLng(
+      widget.pickupLocation!.latitude,
+      widget.pickupLocation!.longitude,
+    );
 
-      final dropLatLng = LatLng(
-        widget.dropLocation!.latitude,
-        widget.dropLocation!.longitude,
-      );
+    final dropLatLng = LatLng(
+      widget.dropLocation!.latitude,
+      widget.dropLocation!.longitude,
+    );
 
-      // Add pickup marker
-      _mapController.markers.removeWhere(
-        (marker) => marker.markerId.value == 'pickup',
-      );
-      _mapController.markers.add(
-        Marker(
-          markerId: const MarkerId('pickup'),
-          position: pickupLatLng,
-          icon: _mapController.markerIconGreen,
-          infoWindow: InfoWindow(
-            title: widget.pickupLocation!.name,
-            snippet: widget.pickupLocation!.address,
-          ),
+    // Add pickup marker
+    _mapController.markers.removeWhere(
+      (marker) => marker.markerId.value == 'pickup',
+    );
+    _mapController.markers.add(
+      Marker(
+        markerId: const MarkerId('pickup'),
+        position: pickupLatLng,
+        icon: _mapController.markerIconGreen,
+        infoWindow: InfoWindow(
+          title: widget.pickupLocation!.name,
+          snippet: widget.pickupLocation!.address,
         ),
-      );
+      ),
+    );
 
-      // Add drop marker
-      _mapController.markers.removeWhere(
-        (marker) => marker.markerId.value == 'drop',
-      );
-      _mapController.markers.add(
-        Marker(
-          markerId: const MarkerId('drop'),
-          position: dropLatLng,
-          icon: _mapController.markerIconRed,
-          infoWindow: InfoWindow(
-            title: widget.dropLocation!.name,
-            snippet: widget.dropLocation!.address,
-          ),
+    // Add drop marker
+    _mapController.markers.removeWhere(
+      (marker) => marker.markerId.value == 'drop',
+    );
+    _mapController.markers.add(
+      Marker(
+        markerId: const MarkerId('drop'),
+        position: dropLatLng,
+        icon: _mapController.markerIconRed,
+        infoWindow: InfoWindow(
+          title: widget.dropLocation!.name,
+          snippet: widget.dropLocation!.address,
         ),
-      );
+      ),
+    );
 
-      // Draw route between the two points
-      _mapController.drawRoute(pickupLatLng, dropLatLng);
-      setState(() {
-        _routeDrawn = true;
-      });
-    }
+    // Draw route between the two points
+    _mapController.drawRoute(pickupLatLng, dropLatLng);
+
+    //load rider markers
+
+    _mapController.plotRandomRiderMarkers();
+    setState(() {
+      _routeDrawn = true;
+    });
   }
 
   bool isRouteView = false;

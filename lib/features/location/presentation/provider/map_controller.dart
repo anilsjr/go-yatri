@@ -391,7 +391,7 @@ class MapController extends ChangeNotifier {
     return randomMarkers;
   }
 
-  plotRandomRiderMarkers(BitmapDescriptor riderMarkerIcon) {
+  plotRandomRiderMarkers([BitmapDescriptor? riderMarkerIcon]) {
     final randomMarkers = generateRandomRiderMarkers(currentPosition!);
 
     for (int i = 0; i < randomMarkers.length; i++) {
@@ -400,7 +400,7 @@ class MapController extends ChangeNotifier {
           markerId: MarkerId('rider_$i'),
           rotation: Random().nextDouble() * 360,
           position: randomMarkers[i],
-          icon: riderMarkerIcon,
+          icon: riderMarkerIcon ?? markerIconBike,
           // infoWindow: InfoWindow(
           //   title: 'Rider $i',
           //   snippet: 'Random rider location',

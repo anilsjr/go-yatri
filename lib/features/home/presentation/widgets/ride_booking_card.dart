@@ -25,25 +25,13 @@ class RideBookingCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header Section
-                Row(
-                  children: [
-                    Text(
-                      'Pickup',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Spacer(),
-                    _buildForMeDropdown(),
-                  ],
+                Text(
+                  'Pickup',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 16),
                 // Pickup and Drop Location Fields
                 _buildLocationFields(context, locationProvider),
-                SizedBox(height: 8),
-                // Select on map button
-                _buildSelectOnMapButton(context),
                 SizedBox(height: 8),
                 // Recent locations
                 _buildRecentLocations(locationProvider),
@@ -68,14 +56,15 @@ class RideBookingCard extends StatelessWidget {
       padding: const EdgeInsets.only(top: 16.0),
       child: ElevatedButton(
         onPressed: () {
-          Navigator.push(
+          Navigator.pushNamed(
             context,
-            MaterialPageRoute(
-              builder: (context) => MapHomePage(
-                pickupLocation: provider.selectedPickupLocation,
-                dropLocation: provider.selectedDropLocation,
-              ),
-            ),
+            '/mapHome',
+            arguments: {
+              'pickupLocation': provider.selectedPickupLocation,
+              'dropLocation': provider.selectedDropLocation,
+              'isPickupSelection': true,
+              // 'initialLocation': provider.initialLocation,
+            },
           );
         },
         style: ElevatedButton.styleFrom(
@@ -90,27 +79,6 @@ class RideBookingCard extends StatelessWidget {
           'VIEW ROUTE',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
-      ),
-    );
-  }
-
-  Widget _buildForMeDropdown() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'For me',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-          ),
-          SizedBox(width: 4),
-          Icon(Icons.keyboard_arrow_down, size: 18),
-        ],
       ),
     );
   }
@@ -198,59 +166,6 @@ class RideBookingCard extends StatelessWidget {
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSelectOnMapButton(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        // Navigate to map selection screen
-        final provider = Provider.of<LocationProvider>(context, listen: false);
-        provider.switchMode(LocationMode.pickup);
-
-        // Only show map directly if both locations are selected
-        if (provider.selectedPickupLocation != null &&
-            provider.selectedDropLocation != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MapHomePage(
-                pickupLocation: provider.selectedPickupLocation,
-                dropLocation: provider.selectedDropLocation,
-              ),
-            ),
-          );
-        } else {
-          // Default to pickup location page
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ChangeNotifierProvider.value(
-                value: provider,
-                child: PickupLocationPage(),
-              ),
-            ),
-          );
-        }
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.map_outlined, size: 18, color: Colors.black87),
-            SizedBox(width: 8),
-            Text(
-              'Select on map',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
               ),
             ),
           ],

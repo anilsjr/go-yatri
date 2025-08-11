@@ -77,7 +77,6 @@ class _DropLocationPageState extends State<DropLocationPage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildCurrentLocationItem(provider),
               _buildSearchBar(provider),
               _buildSelectOnMapButton(context, provider),
               Padding(
@@ -107,49 +106,6 @@ class _DropLocationPageState extends State<DropLocationPage> {
             ],
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildCurrentLocationItem(LocationProvider provider) {
-    return InkWell(
-      onTap: () {
-        provider.selectCurrentLocation();
-        Navigator.pop(context); // Return to home screen
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.red.withOpacity(0.1),
-              ),
-              child: const Center(
-                child: Icon(Icons.my_location, color: Colors.red, size: 20),
-              ),
-            ),
-            const SizedBox(width: 16),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Current Location',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  Text(
-                    'Using GPS',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

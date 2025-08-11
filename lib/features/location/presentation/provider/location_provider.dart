@@ -8,7 +8,7 @@ import '../../domain/repositories/location_selection_repository.dart';
 enum LocationMode { pickup, drop }
 
 class LocationProvider extends ChangeNotifier {
-  final LocationRepository _repository = LocationRepositoryImpl();
+  final LocationRepositoryImpl _repository = LocationRepositoryImpl();
   final _uuid = Uuid();
 
   LocationMode _mode = LocationMode.pickup;
