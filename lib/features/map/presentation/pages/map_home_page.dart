@@ -166,54 +166,7 @@ class _MapHomePageState extends State<MapHomePage> {
                     // Current Location Button
                     _locateMeBtn(mapController),
                     // Locate Path Button
-                    !widget.showRoute
-                        ? _locatePathBtn(mapController)
-                        : SizedBox(height: 1),
-
-                    // Select this location button - only show in selection mode
-                    if (!widget.showRoute)
-                      Positioned(
-                        bottom: 16,
-                        left: 16,
-                        right: 80,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: widget.isPickupSelection
-                                ? Colors.green
-                                : Colors.red,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          onPressed: () {
-                            // Return the center position of the map to the calling page
-                            if (mapController.mapController != null) {
-                              mapController.mapController!
-                                  .getVisibleRegion()
-                                  .then((bounds) {
-                                    final center = LatLng(
-                                      (bounds.northeast.latitude +
-                                              bounds.southwest.latitude) /
-                                          2,
-                                      (bounds.northeast.longitude +
-                                              bounds.southwest.longitude) /
-                                          2,
-                                    );
-                                    Navigator.pop(context, center);
-                                  });
-                            }
-                          },
-                          child: const Text(
-                            'SELECT THIS LOCATION',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
+                    _locatePathBtn(mapController),
 
                     // Book ride button - only show in route view mode
                     if (widget.showRoute)
@@ -230,17 +183,7 @@ class _MapHomePageState extends State<MapHomePage> {
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          onPressed: () {
-                            // TODO: Implement booking logic
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Booking functionality will be implemented soon!',
-                                ),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          },
+                          onPressed: () => _showRideOptionsBottomSheet(context),
                           child: const Text(
                             'BOOK RIDE',
                             style: TextStyle(
@@ -321,6 +264,306 @@ class _MapHomePageState extends State<MapHomePage> {
           });
         },
         icon: const Icon(Icons.directions, color: Colors.brown),
+      ),
+    );
+  }
+
+  void _showRideOptionsBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) => Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              // Ride options
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  children: [
+                    _buildRideOption(
+                      icon: '🏍️',
+                      title: 'Bike',
+                      subtitle: '2 mins • Drop 11:53 pm',
+                      price: '₹59',
+                      isSelected: false,
+                    ),
+                    _buildRideOption(
+                      icon: '🚕',
+                      title: 'Cab Economy',
+                      subtitle:
+                          'Affordable car rides\n2 mins away • Drop 11:53 pm',
+                      price: '₹138',
+                      isSelected: true,
+                      badge: '👥 4',
+                    ),
+                    _buildRideOption(
+                      icon: '🛺',
+                      title: 'Auto',
+                      subtitle: '2 mins • Drop 11:53 pm',
+                      price: '₹111',
+                      isSelected: false,
+                      fastestBadge: true,
+                    ),
+                    _buildRideOption(
+                      icon: '🚗',
+                      title: 'Cab Premium',
+                      subtitle: '2 mins • Drop 11:53 pm',
+                      price: '₹166',
+                      isSelected: false,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Book button
+              _buildBookButton(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationInfo() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: const BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                widget.pickupLocation?.name ?? 'Pickup Location',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Icon(Icons.edit, size: 20, color: Colors.grey),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: 2,
+          height: 20,
+          color: Colors.grey[300],
+          margin: const EdgeInsets.only(left: 5),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                widget.dropLocation?.name ?? 'Drop Location',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Icon(Icons.edit, size: 20, color: Colors.grey),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRideOption({
+    required String icon,
+    required String title,
+    required String subtitle,
+    required String price,
+    required bool isSelected,
+    String? badge,
+    bool fastestBadge = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: isSelected ? Colors.black : Colors.grey[300]!,
+          width: isSelected ? 2 : 1,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Icon
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(icon, style: const TextStyle(fontSize: 24)),
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            // Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (fastestBadge) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'FASTEST',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (badge != null) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          badge,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+
+            // Price
+            Text(
+              price,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentMethod() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.account_balance_wallet, size: 24),
+          SizedBox(width: 12),
+          Text(
+            'Cash',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          Spacer(),
+          Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Booking Cab Economy...'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(
+            0xFFFFC107,
+          ), // Yellow color like in image
+          foregroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+        ),
+        child: const Text(
+          'Book Cab Economy',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
