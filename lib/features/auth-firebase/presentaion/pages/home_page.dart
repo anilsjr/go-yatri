@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:goyatri/routes/routes.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:goyatri/features/auth-firebase/presentaion/controller/logout_controller.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -16,30 +17,15 @@ class HomePage extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.logout),
             onPressed: () async {
-              final shouldLogout = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text('Logout'),
-                  content: Text('Are you sure you want to logout?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: Text('Cancel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: Text('Logout'),
-                    ),
-                  ],
-                ),
+              final logoutController = Provider.of<LogoutController>(
+                context,
+                listen: false,
               );
+              final shouldLogout = await logoutController
+                  .showLogoutConfirmation(context);
 
-              if (shouldLogout == true) {
-                await FirebaseAuth.instance.signOut();
+              if (shouldLogout) {
+                await logoutController.logout();
               }
             },
           ),
