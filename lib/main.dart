@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:goyatri/routes/routes.dart';
 import 'package:goyatri/features/auth-firebase/presentaion/pages/home_page.dart';
 import 'package:goyatri/features/auth-firebase/presentaion/pages/login_page.dart';
+import 'package:goyatri/features/home/presentation/pages/new_home_page.dart';
 import 'package:provider/provider.dart';
 import 'package:goyatri/features/auth-firebase/presentaion/controller/login_controller.dart';
 import 'package:goyatri/features/auth-firebase/presentaion/controller/logout_controller.dart';
@@ -51,7 +52,7 @@ class MyApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'GoYatri',
-      home: AuthWrapper(),
+      home: SafeArea(child: AuthWrapper()),
       getPages: AppRoutes.routes,
     );
   }
@@ -70,7 +71,7 @@ class AuthWrapper extends StatelessWidget {
         }
         if (snapshot.hasData) {
           // User is signed in
-          return HomePage();
+          return NewHomePage();
         } else {
           // User is not signed in
           return LoginPage();
