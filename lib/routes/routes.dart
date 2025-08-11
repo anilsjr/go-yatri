@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:goyatri/features/auth-firebase/presentaion/pages/home_page.dart';
 import 'package:goyatri/features/auth-firebase/presentaion/pages/login_page.dart';
 import 'package:goyatri/features/auth-firebase/presentaion/pages/signup_page.dart';
-import 'package:goyatri/features/location/presentaion/pages/map_home_page.dart';
+import 'package:goyatri/features/location/presentation/pages/map_home_page.dart';
 import 'package:goyatri/features/home/presentation/pages/new_home_page.dart';
 import 'package:goyatri/features/home/presentation/pages/menu_page.dart';
 
@@ -19,7 +19,7 @@ class AppRoutes {
     GetPage(name: newHome, page: () => NewHomePage()),
     GetPage(name: login, page: () => LoginPage()),
     GetPage(name: signup, page: () => SignupPage()),
-    GetPage(name: mappage, page: () => MapScreen()),
+    GetPage(name: mappage, page: () => MapHomePage()),
     GetPage(name: menu, page: () => MenuPage()),
   ];
 }

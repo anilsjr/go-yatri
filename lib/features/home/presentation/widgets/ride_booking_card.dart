@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:goyatri/features/location/presentation/provider/location_provider.dart';
-import 'package:goyatri/features/location/presentation/pages/location_selection_screen.dart';
+import 'package:goyatri/features/location/presentation/pages/pickup_location_page.dart';
+import 'package:goyatri/features/location/presentation/pages/drop_location_page.dart';
+import 'package:goyatri/features/map/presentation/pages/map_home_page.dart';
 
 class RideBookingCard extends StatelessWidget {
   const RideBookingCard({Key? key}) : super(key: key);
@@ -45,11 +47,50 @@ class RideBookingCard extends StatelessWidget {
                 SizedBox(height: 8),
                 // Recent locations
                 _buildRecentLocations(locationProvider),
+
+                // View Route button (only show when both pickup and drop are selected)
+                if (locationProvider.selectedPickupLocation != null &&
+                    locationProvider.selectedDropLocation != null)
+                  _buildViewRouteButton(context, locationProvider),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildViewRouteButton(
+    BuildContext context,
+    LocationProvider provider,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16.0),
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MapHomePage(
+                pickupLocation: provider.selectedPickupLocation,
+                dropLocation: provider.selectedDropLocation,
+              ),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(double.infinity, 48),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        child: const Text(
+          'VIEW ROUTE',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ),
     );
   }
 
@@ -137,7 +178,7 @@ class RideBookingCard extends StatelessWidget {
           MaterialPageRoute(
             builder: (context) => ChangeNotifierProvider.value(
               value: provider,
-              child: LocationSelectionScreen(),
+              child: isPickup ? PickupLocationPage() : DropLocationPage(),
             ),
           ),
         );
@@ -171,10 +212,31 @@ class RideBookingCard extends StatelessWidget {
         // Navigate to map selection screen
         final provider = Provider.of<LocationProvider>(context, listen: false);
         provider.switchMode(LocationMode.pickup);
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => LocationSelectionScreen()),
-        );
+
+        // Only show map directly if both locations are selected
+        if (provider.selectedPickupLocation != null &&
+            provider.selectedDropLocation != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MapHomePage(
+                pickupLocation: provider.selectedPickupLocation,
+                dropLocation: provider.selectedDropLocation,
+              ),
+            ),
+          );
+        } else {
+          // Default to pickup location page
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChangeNotifierProvider.value(
+                value: provider,
+                child: PickupLocationPage(),
+              ),
+            ),
+          );
+        }
       },
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12),

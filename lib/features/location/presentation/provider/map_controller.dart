@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
@@ -127,18 +126,6 @@ class MapController extends ChangeNotifier {
       // Add marker for current location
       // Remove existing 'start' marker if it exists
       markers.removeWhere((marker) => marker.markerId.value == 'start');
-
-      markers.add(
-        Marker(
-          markerId: MarkerId('start'),
-          position: currentPosition!,
-          icon: markerIconGreen,
-          infoWindow: InfoWindow(
-            title: 'Start Location',
-            snippet: 'You are here',
-          ),
-        ),
-      );
 
       notifyListeners();
       if (mapController != null) {
@@ -303,7 +290,7 @@ class MapController extends ChangeNotifier {
         markerId: MarkerId('destination'),
         position: selected,
         icon: markerIconRed,
-        infoWindow: InfoWindow(title: placeName).copyWith(titleParam: 'dsafsd'),
+        infoWindow: InfoWindow(title: placeName),
       ),
     );
 
@@ -366,7 +353,7 @@ class MapController extends ChangeNotifier {
 
   List<LatLng> generateRandomRiderMarkers(LatLng userLocation) {
     final random = Random();
-    final int count = 3 + random.nextInt(3); // 3 to 5 markers
+    final int count = 5 + random.nextInt(3); // 5 to 7 markers
     const double radiusInKm = 2;
     const double earthRadius = 6371.0;
 

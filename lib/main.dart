@@ -11,7 +11,7 @@ import 'package:goyatri/features/home/presentation/pages/new_home_page.dart';
 import 'package:provider/provider.dart';
 import 'package:goyatri/features/auth-firebase/presentaion/controller/login_controller.dart';
 import 'package:goyatri/features/auth-firebase/presentaion/controller/logout_controller.dart';
-import 'package:goyatri/features/location/presentaion/controller/map_controller.dart';
+import 'package:goyatri/features/location/presentation/provider/map_controller.dart';
 import 'package:goyatri/features/location/presentation/provider/location_provider.dart';
 
 void main() async {
