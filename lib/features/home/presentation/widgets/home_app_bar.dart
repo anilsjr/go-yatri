@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:goyatri/features/location/presentation/provider/location_provider.dart';
+import 'package:goyatri/features/location/presentation/pages/location_selection_screen.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Function()? onMenuTap;
@@ -24,21 +27,35 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
             constraints: BoxConstraints(),
           ),
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(30),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Icon(Icons.search, color: Colors.grey[600]),
-                  SizedBox(width: 8),
-                  Text(
-                    'Where are you going?',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 16),
+            child: GestureDetector(
+              onTap: () {
+                // Navigate to the location selection screen when tapped
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChangeNotifierProvider(
+                      create: (context) => LocationProvider(),
+                      child: LocationSelectionScreen(),
+                    ),
                   ),
-                ],
+                );
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(Icons.search, color: Colors.grey[600]),
+                    SizedBox(width: 8),
+                    Text(
+                      'Where are you going?',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

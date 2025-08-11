@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:goyatri/features/home/presentation/widgets/ride_booking_card.dart';
 
 class ExploreSection extends StatelessWidget {
   const ExploreSection({Key? key}) : super(key: key);
@@ -8,6 +9,11 @@ class ExploreSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Ride Booking Card - New UI Component
+        RideBookingCard(),
+
+        SizedBox(height: 16),
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Row(
