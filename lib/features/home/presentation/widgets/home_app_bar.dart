@@ -23,7 +23,6 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
             padding: EdgeInsets.zero,
             constraints: BoxConstraints(),
           ),
-          SizedBox(width: 8),
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -43,6 +42,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
               ),
             ),
           ),
+          SizedBox(width: 8),
         ],
       ),
     );
