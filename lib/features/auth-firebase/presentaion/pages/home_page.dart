@@ -111,6 +111,7 @@ class HomePage extends StatelessWidget {
                       title: 'Trip History',
                       onTap: () {
                         // Navigate to trip history
+                        Get.toNamed(AppRoutes.rideHistory);
                       },
                     ),
                     _buildFeatureCard(
