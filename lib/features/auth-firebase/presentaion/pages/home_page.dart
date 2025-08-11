@@ -93,15 +93,6 @@ class HomePage extends StatelessWidget {
                   children: [
                     _buildFeatureCard(
                       context,
-                      icon: Icons.history,
-                      title: 'Trip History',
-                      onTap: () {
-                        // Navigate to trip history
-                        Get.toNamed(AppRoutes.rideHistory);
-                      },
-                    ),
-                    _buildFeatureCard(
-                      context,
                       icon: Icons.favorite,
                       title: 'Saved Places',
                       onTap: () {

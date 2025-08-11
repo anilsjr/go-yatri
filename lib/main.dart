@@ -10,7 +10,6 @@ import 'package:goyatri/features/auth-firebase/presentaion/pages/login_page.dart
 import 'package:provider/provider.dart';
 import 'package:goyatri/features/auth-firebase/presentaion/controller/login_controller.dart';
 import 'package:goyatri/features/auth-firebase/presentaion/controller/logout_controller.dart';
-import 'package:goyatri/features/history/presentation/controller/history_controller.dart';
 import 'package:goyatri/features/location/presentaion/controller/map_controller.dart';
 
 void main() async {
@@ -35,7 +34,6 @@ void main() async {
             return controller;
           },
         ),
-        ChangeNotifierProvider(create: (context) => HistoryController()),
       ],
       child: MyApp(),
     ),
