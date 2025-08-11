@@ -8,6 +8,7 @@ class MapHomePage extends StatefulWidget {
   final LocationModel? pickupLocation;
   final LocationModel? dropLocation;
   final bool isPickupSelection;
+  final bool showRoute;
   final LatLng? initialLocation;
 
   const MapHomePage({
@@ -15,6 +16,7 @@ class MapHomePage extends StatefulWidget {
     this.pickupLocation,
     this.dropLocation,
     this.isPickupSelection = false,
+    this.showRoute = false,
     this.initialLocation,
   }) : super(key: key);
 
@@ -25,7 +27,6 @@ class MapHomePage extends StatefulWidget {
 class _MapHomePageState extends State<MapHomePage> {
   late MapController _mapController;
   bool _isInitialized = false;
-  bool _routeDrawn = false;
   bool _mapCreated = false;
 
   @override
@@ -67,6 +68,13 @@ class _MapHomePageState extends State<MapHomePage> {
   }
 
   void _updateRouteIfNeeded() {
+    // Only draw route if we have both locations and showRoute is true
+    if (widget.pickupLocation == null ||
+        widget.dropLocation == null ||
+        !widget.showRoute) {
+      return;
+    }
+
     // If this is a route view (both pickup and drop are provided)
     final pickupLatLng = LatLng(
       widget.pickupLocation!.latitude,
@@ -114,11 +122,7 @@ class _MapHomePageState extends State<MapHomePage> {
     _mapController.drawRoute(pickupLatLng, dropLatLng);
 
     //load rider markers
-
     _mapController.plotRandomRiderMarkers();
-    setState(() {
-      _routeDrawn = true;
-    });
   }
 
   bool isRouteView = false;
@@ -148,15 +152,13 @@ class _MapHomePageState extends State<MapHomePage> {
                       zoomControlsEnabled: false,
                       mapToolbarEnabled: false,
                       onCameraMove: (_) {
-                        if (isRouteView) {
+                        if (widget.showRoute) {
                           setState(() {
                             isRouteView = false;
                           });
                         }
                       },
-                      onTap:
-                          widget.pickupLocation != null &&
-                              widget.dropLocation != null
+                      onTap: widget.showRoute
                           ? null // Disable tap in route view mode
                           : _handleMapTap,
                     ),
@@ -164,13 +166,12 @@ class _MapHomePageState extends State<MapHomePage> {
                     // Current Location Button
                     _locateMeBtn(mapController),
                     // Locate Path Button
-                    !isRouteView
+                    !widget.showRoute
                         ? _locatePathBtn(mapController)
                         : SizedBox(height: 1),
 
                     // Select this location button - only show in selection mode
-                    if (!(widget.pickupLocation != null &&
-                        widget.dropLocation != null))
+                    if (!widget.showRoute)
                       Positioned(
                         bottom: 16,
                         left: 16,
@@ -215,8 +216,7 @@ class _MapHomePageState extends State<MapHomePage> {
                       ),
 
                     // Book ride button - only show in route view mode
-                    if (widget.pickupLocation != null &&
-                        widget.dropLocation != null)
+                    if (widget.showRoute)
                       Positioned(
                         bottom: 16,
                         left: 16,

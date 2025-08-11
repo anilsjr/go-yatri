@@ -15,7 +15,19 @@ class AppRoutes {
 
   static final routes = [
     GetPage(name: home, page: () => NewHomePage()),
-    GetPage(name: mappage, page: () => MapHomePage()),
+    GetPage(
+      name: mappage,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>?;
+        return MapHomePage(
+          pickupLocation: args?['pickupLocation'],
+          dropLocation: args?['dropLocation'],
+          isPickupSelection: args?['isPickupSelection'] ?? false,
+          showRoute: args?['showRoute'] ?? false,
+          initialLocation: args?['initialLocation'],
+        );
+      },
+    ),
     GetPage(name: login, page: () => LoginPage()),
     GetPage(name: signup, page: () => SignupPage()),
     GetPage(name: menu, page: () => MenuPage()),

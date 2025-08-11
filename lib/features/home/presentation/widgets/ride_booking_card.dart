@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:goyatri/features/location/presentation/provider/location_provider.dart';
 import 'package:goyatri/features/location/presentation/pages/pickup_location_page.dart';
 import 'package:goyatri/features/location/presentation/pages/drop_location_page.dart';
-import 'package:goyatri/features/map/presentation/pages/map_home_page.dart';
 
 class RideBookingCard extends StatelessWidget {
   const RideBookingCard({Key? key}) : super(key: key);
@@ -62,8 +61,10 @@ class RideBookingCard extends StatelessWidget {
             arguments: {
               'pickupLocation': provider.selectedPickupLocation,
               'dropLocation': provider.selectedDropLocation,
-              'isPickupSelection': true,
-              // 'initialLocation': provider.initialLocation,
+              'isPickupSelection':
+                  false, // Changed to false - not selecting, just viewing route
+              'showRoute':
+                  true, // Add flag to indicate we want to show the route
             },
           );
         },
