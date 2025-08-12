@@ -300,34 +300,53 @@ class _MapHomePageState extends State<MapHomePage> {
 
               // Ride options
               Flexible(
-                child: FutureBuilder<List<Map<String, dynamic>>>(
-                  future: _getRideOptions(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(20),
-                          child: CircularProgressIndicator(),
-                        ),
-                      );
-                    }
+                child: Consumer<MapController>(
+                  builder: (context, mapController, child) {
+                    return FutureBuilder<List<Map<String, dynamic>>>(
+                      key: ValueKey(
+                        mapController.selectedTransportOption,
+                      ), // Force rebuild when selection changes
+                      future: _getRideOptions(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
 
-                    final rideOptions =
-                        snapshot.data ?? _getDefaultRideOptions();
+                        final rideOptions =
+                            snapshot.data ?? _getDefaultRideOptions();
 
-                    return ListView.builder(
-                      controller: scrollController,
-                      itemCount: rideOptions.length,
-                      itemBuilder: (context, index) {
-                        final option = rideOptions[index];
-                        return _buildRideOption(
-                          icon: option['icon'],
-                          title: option['title'],
-                          subtitle: option['subtitle'],
-                          price: option['price'],
-                          isSelected: option['isSelected'] ?? false,
-                          badge: option['badge'],
-                          fastestBadge: option['fastestBadge'] ?? false,
+                        return ListView.builder(
+                          controller: scrollController,
+                          itemCount: rideOptions.length,
+                          itemBuilder: (context, index) {
+                            final option = rideOptions[index];
+                            return _buildRideOption(
+                              icon: option['icon'],
+                              title: option['title'],
+                              subtitle: option['subtitle'],
+                              price: option['price'],
+                              isSelected: option['isSelected'] ?? false,
+                              badge: option['badge'],
+                              fastestBadge: option['fastestBadge'] ?? false,
+                              optionId: option['id'],
+                              onTap: () {
+                                print(
+                                  'DEBUG: Option tapped: ${option['id']} - ${option['title']}',
+                                );
+                                if (option['id'] != null) {
+                                  _mapController.selectTransportOption(
+                                    option['id'],
+                                  );
+                                }
+                              },
+                            );
+                          },
                         );
                       },
                     );
@@ -370,34 +389,38 @@ class _MapHomePageState extends State<MapHomePage> {
   List<Map<String, dynamic>> _getDefaultRideOptions() {
     return [
       {
+        'id': 'bike',
         'icon': '🏍️',
         'title': 'Bike',
         'subtitle': '2 mins • Drop 11:53 pm',
         'price': '₹59',
-        'isSelected': false,
+        'isSelected': _mapController.selectedTransportOption == 'bike',
         'fastestBadge': true,
       },
       {
+        'id': 'car_economy',
         'icon': '🚗',
         'title': 'Cab Economy',
         'subtitle': 'Affordable car rides\n2 mins away • Drop 11:53 pm',
         'price': '₹138',
-        'isSelected': true,
+        'isSelected': _mapController.selectedTransportOption == 'car_economy',
         'badge': '👥 4',
       },
       {
+        'id': 'auto',
         'icon': '🛺',
         'title': 'Auto',
         'subtitle': '2 mins • Drop 11:53 pm',
         'price': '₹111',
-        'isSelected': false,
+        'isSelected': _mapController.selectedTransportOption == 'auto',
       },
       {
+        'id': 'car_premium',
         'icon': '🚗',
         'title': 'Cab Premium',
         'subtitle': '2 mins • Drop 11:53 pm',
         'price': '₹166',
-        'isSelected': false,
+        'isSelected': _mapController.selectedTransportOption == 'car_premium',
       },
     ];
   }
@@ -410,96 +433,107 @@ class _MapHomePageState extends State<MapHomePage> {
     required bool isSelected,
     String? badge,
     bool fastestBadge = false,
+    String? optionId,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: isSelected ? Colors.black : Colors.grey[300]!,
-          width: isSelected ? 2 : 1,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isSelected ? Colors.black : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? Colors.black.withOpacity(0.05) : Colors.white,
         ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            // Icon
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // Icon
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.black.withOpacity(0.1)
+                      : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(icon, style: const TextStyle(fontSize: 24)),
+                ),
               ),
-              child: Center(
-                child: Text(icon, style: const TextStyle(fontSize: 24)),
-              ),
-            ),
-            const SizedBox(width: 12),
+              const SizedBox(width: 12),
 
-            // Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (fastestBadge) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.green,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'FASTEST',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                      if (badge != null) ...[
-                        const SizedBox(width: 8),
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
                         Text(
-                          badge,
+                          title,
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                        if (fastestBadge) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'FASTEST',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (badge != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            badge,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            // Price
-            Text(
-              price,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
+              // Price
+              Text(
+                price,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -511,10 +545,14 @@ class _MapHomePageState extends State<MapHomePage> {
       height: 50,
       child: ElevatedButton(
         onPressed: () {
+          final selectedOption = _mapController
+              .getSelectedTransportOptionDetails();
+          final optionName = selectedOption?['title'] ?? 'Cab Economy';
+
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Booking Cab Economy...'),
+            SnackBar(
+              content: Text('Booking $optionName...'),
               duration: Duration(seconds: 2),
             ),
           );

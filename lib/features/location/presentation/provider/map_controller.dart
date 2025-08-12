@@ -33,6 +33,10 @@ class MapController extends ChangeNotifier {
   String? currentRouteDistanceText;
   String? currentRouteDurationText;
 
+  // Transportation option selection
+  String _selectedTransportOption = 'car_economy'; // Default selection
+  List<Map<String, dynamic>> _availableRideOptions = [];
+
   final BuildContext context;
   MapController(this.context);
 
@@ -41,6 +45,10 @@ class MapController extends ChangeNotifier {
   double? get routeDuration => currentRouteDuration;
   String? get routeDistanceText => currentRouteDistanceText;
   String? get routeDurationText => currentRouteDurationText;
+
+  // Getters for transportation options
+  String get selectedTransportOption => _selectedTransportOption;
+  List<Map<String, dynamic>> get availableRideOptions => _availableRideOptions;
 
   /// Get formatted route info for display
   String get routeInfo {
@@ -574,6 +582,49 @@ class MapController extends ChangeNotifier {
     return prices;
   }
 
+  /// Select a transportation option
+  void selectTransportOption(String optionId) {
+    print('DEBUG: Selecting transport option: $optionId');
+    print('DEBUG: Current selection: $_selectedTransportOption');
+
+    if (_selectedTransportOption != optionId) {
+      _selectedTransportOption = optionId;
+      print('DEBUG: Updated selection to: $_selectedTransportOption');
+
+      // Update the isSelected property for all options
+      for (int i = 0; i < _availableRideOptions.length; i++) {
+        _availableRideOptions[i]['isSelected'] =
+            _availableRideOptions[i]['id'] == optionId;
+      }
+
+      notifyListeners();
+      print('DEBUG: notifyListeners() called');
+    } else {
+      print('DEBUG: Same option selected, no change needed');
+    }
+  }
+
+  /// Get the currently selected transportation option details
+  Map<String, dynamic>? getSelectedTransportOptionDetails() {
+    if (_availableRideOptions.isEmpty) return null;
+
+    try {
+      return _availableRideOptions.firstWhere(
+        (option) => option['id'] == _selectedTransportOption,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Update ride options with current selection state
+  void _updateRideOptionsSelectionState(List<Map<String, dynamic>> options) {
+    for (var option in options) {
+      option['isSelected'] = option['id'] == _selectedTransportOption;
+    }
+    _availableRideOptions = options;
+  }
+
   /// Get ride option data for the bottom sheet
   Future<List<Map<String, dynamic>>> getRideOptions(
     LatLng start,
@@ -585,7 +636,7 @@ class MapController extends ChangeNotifier {
         calculateStraightLineDistance(start, end);
     final prices = calculateEstimatedPrices(distance);
 
-    return [
+    final options = [
       {
         'id': 'bike',
         'icon': '🏍️',
@@ -593,7 +644,7 @@ class MapController extends ChangeNotifier {
         'subtitle':
             '${routes['bike']?['duration_text'] ?? '2 mins'} • Drop ${_getEstimatedArrival(routes['bike']?['duration_minutes'] ?? 2)}',
         'price': '₹${prices['bike']?.round() ?? 59}',
-        'isSelected': false,
+        'isSelected': _selectedTransportOption == 'bike',
         'fastestBadge': _isFastest('bike', routes),
       },
       {
@@ -603,7 +654,7 @@ class MapController extends ChangeNotifier {
         'subtitle':
             'Affordable car rides\n${routes['car']?['duration_text'] ?? '2 mins'} away • Drop ${_getEstimatedArrival(routes['car']?['duration_minutes'] ?? 2)}',
         'price': '₹${prices['car_economy']?.round() ?? 138}',
-        'isSelected': true,
+        'isSelected': _selectedTransportOption == 'car_economy',
         'badge': '👥 4',
         'fastestBadge': _isFastest('car', routes),
       },
@@ -614,7 +665,7 @@ class MapController extends ChangeNotifier {
         'subtitle':
             '${routes['auto']?['duration_text'] ?? '2 mins'} • Drop ${_getEstimatedArrival(routes['auto']?['duration_minutes'] ?? 2)}',
         'price': '₹${prices['auto']?.round() ?? 111}',
-        'isSelected': false,
+        'isSelected': _selectedTransportOption == 'auto',
         'fastestBadge': _isFastest('auto', routes),
       },
       {
@@ -624,9 +675,14 @@ class MapController extends ChangeNotifier {
         'subtitle':
             '${routes['car']?['duration_text'] ?? '2 mins'} • Drop ${_getEstimatedArrival(routes['car']?['duration_minutes'] ?? 2)}',
         'price': '₹${prices['car_premium']?.round() ?? 166}',
-        'isSelected': false,
+        'isSelected': _selectedTransportOption == 'car_premium',
       },
     ];
+
+    // Update the available options with current selection state
+    _updateRideOptionsSelectionState(options);
+
+    return options;
   }
 
   bool _isFastest(
