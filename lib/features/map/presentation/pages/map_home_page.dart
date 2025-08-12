@@ -29,6 +29,10 @@ class _MapHomePageState extends State<MapHomePage> {
   bool _isInitialized = false;
   bool _mapCreated = false;
 
+  // Cache for ride options to prevent rebuilds
+  Future<List<Map<String, dynamic>>>? _cachedRideOptionsFuture;
+  String? _lastRouteKey;
+
   @override
   void initState() {
     super.initState();
@@ -132,70 +136,56 @@ class _MapHomePageState extends State<MapHomePage> {
     return Scaffold(
       body: !_isInitialized
           ? const Center(child: CircularProgressIndicator())
-          : Consumer<MapController>(
-              builder: (context, mapController, child) {
-                return Stack(
-                  children: [
-                    GoogleMap(
-                      onMapCreated: _onMapCreated,
-                      initialCameraPosition: CameraPosition(
-                        target:
-                            widget.initialLocation ??
-                            mapController.currentPosition ??
-                            const LatLng(28.7041, 77.1025), // Default: Delhi
-                        zoom: 14,
-                      ),
-                      markers: mapController.markers,
-                      polylines: mapController.polylines,
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: false,
-                      zoomControlsEnabled: false,
-                      mapToolbarEnabled: false,
-                      onCameraMove: (_) {
-                        if (widget.showRoute) {
-                          setState(() {
-                            isRouteView = false;
-                          });
-                        }
-                      },
-                      onTap: widget.showRoute
-                          ? null // Disable tap in route view mode
-                          : _handleMapTap,
-                    ),
-
-                    // Current Location Button
-                    _locateMeBtn(mapController),
-                    // Locate Path Button
-                    _locatePathBtn(mapController),
-
-                    // Book ride button - only show in route view mode
-                    if (widget.showRoute)
-                      Positioned(
-                        bottom: 16,
-                        left: 16,
-                        right: 80,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+          : Column(
+              children: [
+                Expanded(
+                  child: Consumer<MapController>(
+                    builder: (context, mapController, child) {
+                      return Stack(
+                        children: [
+                          GoogleMap(
+                            onMapCreated: _onMapCreated,
+                            initialCameraPosition: CameraPosition(
+                              target:
+                                  widget.initialLocation ??
+                                  mapController.currentPosition ??
+                                  const LatLng(
+                                    28.7041,
+                                    77.1025,
+                                  ), // Default: Delhi
+                              zoom: 14,
                             ),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            markers: mapController.markers,
+                            polylines: mapController.polylines,
+                            myLocationEnabled: true,
+                            myLocationButtonEnabled: false,
+                            zoomControlsEnabled: false,
+                            mapToolbarEnabled: false,
+                            onCameraMove: (_) {
+                              if (widget.showRoute) {
+                                setState(() {
+                                  isRouteView = false;
+                                });
+                              }
+                            },
+                            onTap: widget.showRoute
+                                ? null // Disable tap in route view mode
+                                : _handleMapTap,
                           ),
-                          onPressed: () => _showRideOptionsBottomSheet(context),
-                          child: const Text(
-                            'BOOK RIDE',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              },
+
+                          // Current Location Button
+                          _locateMeBtn(mapController),
+                          // Locate Path Button
+                          _locatePathBtn(mapController),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+                // Ride options container - show only in route view mode
+                // This is outside the Consumer to prevent rebuilds on map changes
+                if (widget.showRoute) _buildRideOptionsContainer(),
+              ],
             ),
     );
   }
@@ -264,97 +254,6 @@ class _MapHomePageState extends State<MapHomePage> {
           });
         },
         icon: const Icon(Icons.directions, color: Colors.brown),
-      ),
-    );
-  }
-
-  void _showRideOptionsBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        // showDragHandle: false,
-        minChildSize: 0.4,
-        maxChildSize: 0.65,
-        expand: false,
-        builder: (context, scrollController) => Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle bar
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-
-              // Ride options - optimized with cached data
-              Flexible(
-                child: Consumer<MapController>(
-                  builder: (context, mapController, child) {
-                    return FutureBuilder<List<Map<String, dynamic>>>(
-                      future: _getRideOptions(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(20),
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
-                        }
-
-                        final rideOptions =
-                            snapshot.data ?? _getDefaultRideOptions();
-
-                        return ListView.builder(
-                          controller: scrollController,
-                          itemCount: rideOptions.length,
-                          physics: const ClampingScrollPhysics(),
-                          itemBuilder: (context, index) {
-                            final option = rideOptions[index];
-                            return _buildRideOption(
-                              icon: option['icon'],
-                              title: option['title'],
-                              subtitle: option['subtitle'],
-                              price: option['price'],
-                              isSelected: option['isSelected'] ?? false,
-                              badge: option['badge'],
-                              fastestBadge: option['fastestBadge'] ?? false,
-                              optionId: option['id'],
-                              onTap: () {
-                                if (option['id'] != null) {
-                                  _mapController.selectTransportOption(
-                                    option['id'],
-                                  );
-                                }
-                              },
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-
-              // Book button
-              _buildBookButton(),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -536,19 +435,20 @@ class _MapHomePageState extends State<MapHomePage> {
   }
 
   Widget _buildBookButton() {
+    // Get the MapController without listening to changes (since parent Selector handles this)
+    final mapController = Provider.of<MapController>(context, listen: false);
+    final selectedOption = mapController.getSelectedTransportOptionDetails();
+    final optionTitle = selectedOption?['title'] ?? 'Cab Economy';
+
     return SizedBox(
       width: double.infinity,
       height: 50,
       child: ElevatedButton(
         onPressed: () {
-          final selectedOption = _mapController
-              .getSelectedTransportOptionDetails();
-          final optionName = selectedOption?['title'] ?? 'Cab Economy';
-
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Booking $optionName...'),
+              content: Text('Booking $optionTitle...'),
               duration: Duration(seconds: 2),
             ),
           );
@@ -562,11 +462,101 @@ class _MapHomePageState extends State<MapHomePage> {
             borderRadius: BorderRadius.circular(25),
           ),
         ),
-        child: const Text(
-          'Book Cab Economy',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        child: Text(
+          'Book $optionTitle',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
     );
+  }
+
+  // Cached ride options container - only rebuild when location selection changes
+  Widget _buildRideOptionsContainer() {
+    return Container(
+      height: 400,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 2),
+        ],
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Ride options - Only rebuild when transport selection changes
+            Selector<MapController, String>(
+              selector: (context, mapController) =>
+                  mapController.selectedTransportOption,
+              builder: (context, selectedTransportOption, child) {
+                return FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _getCachedRideOptions(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+
+                    final rideOptions =
+                        snapshot.data ?? _getDefaultRideOptions();
+
+                    return Column(
+                      children: rideOptions.map((option) {
+                        return _buildRideOption(
+                          icon: option['icon'],
+                          title: option['title'],
+                          subtitle: option['subtitle'],
+                          price: option['price'],
+                          isSelected: option['isSelected'] ?? false,
+                          badge: option['badge'],
+                          fastestBadge: option['fastestBadge'] ?? false,
+                          optionId: option['id'],
+                          onTap: () {
+                            if (option['id'] != null) {
+                              _mapController.selectTransportOption(
+                                option['id'],
+                              );
+                            }
+                          },
+                        );
+                      }).toList(),
+                    );
+                  },
+                );
+              },
+            ),
+
+            // Book button
+            const SizedBox(height: 16),
+            Selector<MapController, String>(
+              selector: (context, mapController) =>
+                  mapController.selectedTransportOption,
+              builder: (context, selectedTransportOption, child) {
+                return _buildBookButton();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Cache management for ride options
+  Future<List<Map<String, dynamic>>> _getCachedRideOptions() {
+    final routeKey =
+        '${widget.pickupLocation?.latitude ?? 0},${widget.pickupLocation?.longitude ?? 0}-${widget.dropLocation?.latitude ?? 0},${widget.dropLocation?.longitude ?? 0}';
+
+    if (_lastRouteKey != routeKey || _cachedRideOptionsFuture == null) {
+      _lastRouteKey = routeKey;
+      _cachedRideOptionsFuture = _getRideOptions();
+    }
+
+    return _cachedRideOptionsFuture!;
   }
 }
