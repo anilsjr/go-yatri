@@ -37,6 +37,11 @@ class MapController extends ChangeNotifier {
   String _selectedTransportOption = 'car_economy'; // Default selection
   List<Map<String, dynamic>> _availableRideOptions = [];
 
+  // Route calculation cache
+  String? _lastRouteKey;
+  Map<String, Map<String, dynamic>>? _cachedRoutes;
+  List<Map<String, dynamic>>? _cachedRideOptions;
+
   final BuildContext context;
   MapController(this.context);
 
@@ -490,118 +495,167 @@ class MapController extends ChangeNotifier {
     final results = <String, Map<String, dynamic>>{};
 
     try {
-      // Car route (for Cab Economy, Cab Premium)
+      // Single car route calculation (most reliable)
       final carRoute = await calculateCarRoute(start, end);
       results['car'] = carRoute;
 
-      // Bike route (for Bike rides)
-      final bikeRoute = await calculateBikeRoute(start, end);
-      results['bike'] = bikeRoute;
+      if (carRoute['success']) {
+        // Use car route data to estimate other routes (faster)
+        final carDistance = carRoute['distance_km'];
+        final carDuration = carRoute['duration_minutes'];
 
-      // Auto route - use driving mode but with different speed estimation
-      final autoRoute = await calculateDistanceAndTime(
-        start,
-        end,
-        mode: 'driving',
-      );
-      if (autoRoute['success']) {
-        // Auto rickshaws are typically slower than cars in traffic
-        final adjustedDuration =
-            autoRoute['duration_minutes'] * 1.2; // 20% slower
+        // Auto route - 20% slower than car in city traffic
+        final autoDuration = carDuration * 1.2;
         results['auto'] = {
-          ...autoRoute,
-          'duration_minutes': adjustedDuration,
-          'duration_text': '${adjustedDuration.round()} mins',
+          'distance_km': carDistance,
+          'distance_text': carRoute['distance_text'],
+          'duration_minutes': autoDuration,
+          'duration_text': '${autoDuration.round()} mins',
+          'success': true,
           'vehicle_type': 'auto',
         };
+
+        // Bike route - typically 30% faster than car in traffic but use conservative estimate
+        final bikeDuration = carDuration * 0.8;
+        results['bike'] = {
+          'distance_km': carDistance,
+          'distance_text': carRoute['distance_text'],
+          'duration_minutes': bikeDuration,
+          'duration_text': '${bikeDuration.round()} mins',
+          'success': true,
+          'vehicle_type': 'bike',
+        };
       } else {
-        results['auto'] = autoRoute;
+        // Fallback to direct calculations if car route fails
+        _calculateFallbackRoutes(start, end, results);
       }
     } catch (e) {
       if (kDebugMode) {
         print('Error calculating ride routes: $e');
       }
-
-      // Fallback calculations
-      final distance = calculateStraightLineDistance(start, end);
-
-      results['car'] = {
-        'distance_km': distance,
-        'distance_text': '${distance.toStringAsFixed(1)} km',
-        'duration_minutes': distance * 2, // 30 km/h average
-        'duration_text': '${(distance * 2).round()} mins',
-        'success': false,
-        'fallback': true,
-      };
-
-      results['bike'] = {
-        'distance_km': distance,
-        'distance_text': '${distance.toStringAsFixed(1)} km',
-        'duration_minutes': distance * 4, // 15 km/h average
-        'duration_text': '${(distance * 4).round()} mins',
-        'success': false,
-        'fallback': true,
-      };
-
-      results['auto'] = {
-        'distance_km': distance,
-        'distance_text': '${distance.toStringAsFixed(1)} km',
-        'duration_minutes': distance * 2.5, // 24 km/h average
-        'duration_text': '${(distance * 2.5).round()} mins',
-        'success': false,
-        'fallback': true,
-      };
+      _calculateFallbackRoutes(start, end, results);
     }
 
     return results;
   }
 
-  /// Calculate estimated prices based on distance and vehicle type
-  Map<String, double> calculateEstimatedPrices(double distanceKm) {
-    // Base prices and per-km rates (you can adjust these)
-    const Map<String, Map<String, double>> priceConfig = {
-      'bike': {'base': 10.0, 'perKm': 6.0, 'min': 22.0},
-      'auto': {'base': 20.0, 'perKm': 12.0, 'min': 35.0},
-      'car_economy': {'base': 40.0, 'perKm': 15.0, 'min': 50.0},
-      'car_premium': {'base': 60.0, 'perKm': 20.0, 'min': 80.0},
+  /// Calculate fallback routes using straight-line distance
+  void _calculateFallbackRoutes(
+    LatLng start,
+    LatLng end,
+    Map<String, Map<String, dynamic>> results,
+  ) {
+    final distance = calculateStraightLineDistance(start, end);
+
+    results['car'] = {
+      'distance_km': distance,
+      'distance_text': '${distance.toStringAsFixed(1)} km',
+      'duration_minutes': distance * 2, // 30 km/h average
+      'duration_text': '${(distance * 2).round()} mins',
+      'success': false,
+      'fallback': true,
     };
 
-    Map<String, double> prices = {};
+    results['bike'] = {
+      'distance_km': distance,
+      'distance_text': '${distance.toStringAsFixed(1)} km',
+      'duration_minutes':
+          distance * 2.5, // 24 km/h average for bikes in traffic
+      'duration_text': '${(distance * 2.5).round()} mins',
+      'success': false,
+      'fallback': true,
+    };
 
-    priceConfig.forEach((vehicleType, config) {
-      final basePrice = config['base']!;
-      final perKmRate = config['perKm']!;
-      final minPrice = config['min']!;
+    results['auto'] = {
+      'distance_km': distance,
+      'distance_text': '${distance.toStringAsFixed(1)} km',
+      'duration_minutes': distance * 2.5, // 24 km/h average
+      'duration_text': '${(distance * 2.5).round()} mins',
+      'success': false,
+      'fallback': true,
+    };
+  }
 
-      final calculatedPrice = basePrice + (distanceKm * perKmRate);
-      prices[vehicleType] = calculatedPrice < minPrice
-          ? minPrice
-          : calculatedPrice;
-    });
+  /// Calculate estimated prices based on distance and vehicle type (optimized)
+  Map<String, double> calculateEstimatedPrices(double distanceKm) {
+    // Pre-calculated base prices and per-km rates for faster computation
+    const bikeBase = 10.0, bikePerKm = 6.0, bikeMin = 22.0;
+    const autoBase = 20.0, autoPerKm = 12.0, autoMin = 35.0;
+    const carEconomyBase = 40.0, carEconomyPerKm = 15.0, carEconomyMin = 50.0;
+    const carPremiumBase = 60.0, carPremiumPerKm = 20.0, carPremiumMin = 80.0;
 
-    return prices;
+    final bikePrice = (bikeBase + (distanceKm * bikePerKm));
+    final autoPrice = (autoBase + (distanceKm * autoPerKm));
+    final carEconomyPrice = (carEconomyBase + (distanceKm * carEconomyPerKm));
+    final carPremiumPrice = (carPremiumBase + (distanceKm * carPremiumPerKm));
+
+    return {
+      'bike': bikePrice < bikeMin ? bikeMin : bikePrice,
+      'auto': autoPrice < autoMin ? autoMin : autoPrice,
+      'car_economy': carEconomyPrice < carEconomyMin
+          ? carEconomyMin
+          : carEconomyPrice,
+      'car_premium': carPremiumPrice < carPremiumMin
+          ? carPremiumMin
+          : carPremiumPrice,
+    };
+  }
+
+  /// Quickly update selection state in cached options without full recalculation
+  void updateSelectionInCache(String optionId) {
+    if (_cachedRideOptions != null) {
+      for (final option in _cachedRideOptions!) {
+        option['isSelected'] = option['id'] == optionId;
+      }
+    }
   }
 
   /// Select a transportation option
   void selectTransportOption(String optionId) {
-    print('DEBUG: Selecting transport option: $optionId');
-    print('DEBUG: Current selection: $_selectedTransportOption');
+    // Early return if same option is selected
+    if (_selectedTransportOption == optionId) return;
 
-    if (_selectedTransportOption != optionId) {
-      _selectedTransportOption = optionId;
-      print('DEBUG: Updated selection to: $_selectedTransportOption');
+    _selectedTransportOption = optionId;
 
-      // Update the isSelected property for all options
-      for (int i = 0; i < _availableRideOptions.length; i++) {
-        _availableRideOptions[i]['isSelected'] =
-            _availableRideOptions[i]['id'] == optionId;
+    // Efficiently update selection state in both current and cached options
+    if (_availableRideOptions.isNotEmpty) {
+      for (final option in _availableRideOptions) {
+        option['isSelected'] = option['id'] == optionId;
       }
-
-      notifyListeners();
-      print('DEBUG: notifyListeners() called');
-    } else {
-      print('DEBUG: Same option selected, no change needed');
     }
+
+    // Also update cached options to avoid recalculation
+    updateSelectionInCache(optionId);
+
+    notifyListeners();
+  }
+
+  /// Pre-calculate ride options to improve performance
+  Future<void> preCalculateRideOptions(LatLng start, LatLng end) async {
+    final routeKey =
+        '${start.latitude},${start.longitude}-${end.latitude},${end.longitude}';
+
+    // Only calculate if not already cached
+    if (_lastRouteKey != routeKey) {
+      try {
+        // Calculate routes in background
+        await _getCachedRoutes(start, end, routeKey);
+
+        // Calculate ride options in background
+        await getRideOptions(start, end);
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error pre-calculating ride options: $e');
+        }
+      }
+    }
+  }
+
+  /// Clear route cache when locations change
+  void clearRouteCache() {
+    _lastRouteKey = null;
+    _cachedRoutes = null;
+    _cachedRideOptions = null;
   }
 
   /// Get the currently selected transportation option details
@@ -625,12 +679,26 @@ class MapController extends ChangeNotifier {
     _availableRideOptions = options;
   }
 
-  /// Get ride option data for the bottom sheet
+  /// Get ride option data for the bottom sheet with caching
   Future<List<Map<String, dynamic>>> getRideOptions(
     LatLng start,
     LatLng end,
   ) async {
-    final routes = await calculateRideRoutes(start, end);
+    // Create a unique key for this route
+    final routeKey =
+        '${start.latitude},${start.longitude}-${end.latitude},${end.longitude}';
+
+    // Return cached options if available and route hasn't changed
+    if (_lastRouteKey == routeKey && _cachedRideOptions != null) {
+      // Update selection state and return cached options
+      for (final option in _cachedRideOptions!) {
+        option['isSelected'] = option['id'] == _selectedTransportOption;
+      }
+      return _cachedRideOptions!;
+    }
+
+    // Calculate routes (this will be cached)
+    final routes = await _getCachedRoutes(start, end, routeKey);
     final distance =
         routes['car']?['distance_km'] ??
         calculateStraightLineDistance(start, end);
@@ -655,7 +723,7 @@ class MapController extends ChangeNotifier {
             'Affordable car rides\n${routes['car']?['duration_text'] ?? '2 mins'} away • Drop ${_getEstimatedArrival(routes['car']?['duration_minutes'] ?? 2)}',
         'price': '₹${prices['car_economy']?.round() ?? 138}',
         'isSelected': _selectedTransportOption == 'car_economy',
-        'badge': '👥 4',
+        'badge': '',
         'fastestBadge': _isFastest('car', routes),
       },
       {
@@ -679,10 +747,28 @@ class MapController extends ChangeNotifier {
       },
     ];
 
-    // Update the available options with current selection state
+    // Cache the results
+    _lastRouteKey = routeKey;
+    _cachedRideOptions = options;
     _updateRideOptionsSelectionState(options);
 
     return options;
+  }
+
+  /// Get cached routes or calculate new ones
+  Future<Map<String, Map<String, dynamic>>> _getCachedRoutes(
+    LatLng start,
+    LatLng end,
+    String routeKey,
+  ) async {
+    // Return cached routes if available
+    if (_lastRouteKey == routeKey && _cachedRoutes != null) {
+      return _cachedRoutes!;
+    }
+
+    // Calculate and cache new routes
+    _cachedRoutes = await calculateRideRoutes(start, end);
+    return _cachedRoutes!;
   }
 
   bool _isFastest(
@@ -724,6 +810,9 @@ class MapController extends ChangeNotifier {
 
   void onPlaceSelected(double lat, double lng, placeName) {
     LatLng selected = LatLng(lat, lng);
+
+    // Clear route cache when destination changes
+    clearRouteCache();
 
     // Remove existing destination marker if it exists
     markers.removeWhere((marker) => marker.markerId.value == 'destination');

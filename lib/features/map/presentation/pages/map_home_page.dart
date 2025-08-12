@@ -278,6 +278,7 @@ class _MapHomePageState extends State<MapHomePage> {
       isScrollControlled: true,
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.6,
+        // showDragHandle: false,
         minChildSize: 0.4,
         maxChildSize: 0.65,
         expand: false,
@@ -298,14 +299,11 @@ class _MapHomePageState extends State<MapHomePage> {
                 ),
               ),
 
-              // Ride options
+              // Ride options - optimized with cached data
               Flexible(
                 child: Consumer<MapController>(
                   builder: (context, mapController, child) {
                     return FutureBuilder<List<Map<String, dynamic>>>(
-                      key: ValueKey(
-                        mapController.selectedTransportOption,
-                      ), // Force rebuild when selection changes
                       future: _getRideOptions(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
@@ -324,6 +322,7 @@ class _MapHomePageState extends State<MapHomePage> {
                         return ListView.builder(
                           controller: scrollController,
                           itemCount: rideOptions.length,
+                          physics: const ClampingScrollPhysics(),
                           itemBuilder: (context, index) {
                             final option = rideOptions[index];
                             return _buildRideOption(
@@ -336,9 +335,6 @@ class _MapHomePageState extends State<MapHomePage> {
                               fastestBadge: option['fastestBadge'] ?? false,
                               optionId: option['id'],
                               onTap: () {
-                                print(
-                                  'DEBUG: Option tapped: ${option['id']} - ${option['title']}',
-                                );
                                 if (option['id'] != null) {
                                   _mapController.selectTransportOption(
                                     option['id'],
