@@ -279,7 +279,7 @@ class _MapHomePageState extends State<MapHomePage> {
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.6,
         minChildSize: 0.4,
-        maxChildSize: 0.9,
+        maxChildSize: 0.65,
         expand: false,
         builder: (context, scrollController) => Container(
           padding: const EdgeInsets.all(16),
@@ -299,42 +299,39 @@ class _MapHomePageState extends State<MapHomePage> {
               ),
 
               // Ride options
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  children: [
-                    _buildRideOption(
-                      icon: '🏍️',
-                      title: 'Bike',
-                      subtitle: '2 mins • Drop 11:53 pm',
-                      price: '₹59',
-                      isSelected: false,
-                    ),
-                    _buildRideOption(
-                      icon: '🚕',
-                      title: 'Cab Economy',
-                      subtitle:
-                          'Affordable car rides\n2 mins away • Drop 11:53 pm',
-                      price: '₹138',
-                      isSelected: true,
-                      badge: '👥 4',
-                    ),
-                    _buildRideOption(
-                      icon: '🛺',
-                      title: 'Auto',
-                      subtitle: '2 mins • Drop 11:53 pm',
-                      price: '₹111',
-                      isSelected: false,
-                      fastestBadge: true,
-                    ),
-                    _buildRideOption(
-                      icon: '🚗',
-                      title: 'Cab Premium',
-                      subtitle: '2 mins • Drop 11:53 pm',
-                      price: '₹166',
-                      isSelected: false,
-                    ),
-                  ],
+              Flexible(
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _getRideOptions(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(20),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+
+                    final rideOptions =
+                        snapshot.data ?? _getDefaultRideOptions();
+
+                    return ListView.builder(
+                      controller: scrollController,
+                      itemCount: rideOptions.length,
+                      itemBuilder: (context, index) {
+                        final option = rideOptions[index];
+                        return _buildRideOption(
+                          icon: option['icon'],
+                          title: option['title'],
+                          subtitle: option['subtitle'],
+                          price: option['price'],
+                          isSelected: option['isSelected'] ?? false,
+                          badge: option['badge'],
+                          fastestBadge: option['fastestBadge'] ?? false,
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
 
@@ -347,69 +344,62 @@ class _MapHomePageState extends State<MapHomePage> {
     );
   }
 
-  Widget _buildLocationInfo() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 12,
-              height: 12,
-              decoration: const BoxDecoration(
-                color: Colors.green,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                widget.pickupLocation?.name ?? 'Pickup Location',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const Icon(Icons.edit, size: 20, color: Colors.grey),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: 2,
-          height: 20,
-          color: Colors.grey[300],
-          margin: const EdgeInsets.only(left: 5),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Container(
-              width: 12,
-              height: 12,
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                widget.dropLocation?.name ?? 'Drop Location',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const Icon(Icons.edit, size: 20, color: Colors.grey),
-          ],
-        ),
-      ],
+  Future<List<Map<String, dynamic>>> _getRideOptions() async {
+    if (widget.pickupLocation == null || widget.dropLocation == null) {
+      return _getDefaultRideOptions();
+    }
+
+    final pickupLatLng = LatLng(
+      widget.pickupLocation!.latitude,
+      widget.pickupLocation!.longitude,
     );
+
+    final dropLatLng = LatLng(
+      widget.dropLocation!.latitude,
+      widget.dropLocation!.longitude,
+    );
+
+    try {
+      return await _mapController.getRideOptions(pickupLatLng, dropLatLng);
+    } catch (e) {
+      print('Error getting ride options: $e');
+      return _getDefaultRideOptions();
+    }
+  }
+
+  List<Map<String, dynamic>> _getDefaultRideOptions() {
+    return [
+      {
+        'icon': '🏍️',
+        'title': 'Bike',
+        'subtitle': '2 mins • Drop 11:53 pm',
+        'price': '₹59',
+        'isSelected': false,
+        'fastestBadge': true,
+      },
+      {
+        'icon': '🚗',
+        'title': 'Cab Economy',
+        'subtitle': 'Affordable car rides\n2 mins away • Drop 11:53 pm',
+        'price': '₹138',
+        'isSelected': true,
+        'badge': '👥 4',
+      },
+      {
+        'icon': '🛺',
+        'title': 'Auto',
+        'subtitle': '2 mins • Drop 11:53 pm',
+        'price': '₹111',
+        'isSelected': false,
+      },
+      {
+        'icon': '🚗',
+        'title': 'Cab Premium',
+        'subtitle': '2 mins • Drop 11:53 pm',
+        'price': '₹166',
+        'isSelected': false,
+      },
+    ];
   }
 
   Widget _buildRideOption({
@@ -511,28 +501,6 @@ class _MapHomePageState extends State<MapHomePage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildPaymentMethod() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Row(
-        children: [
-          Icon(Icons.account_balance_wallet, size: 24),
-          SizedBox(width: 12),
-          Text(
-            'Cash',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-          ),
-          Spacer(),
-          Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-        ],
       ),
     );
   }
