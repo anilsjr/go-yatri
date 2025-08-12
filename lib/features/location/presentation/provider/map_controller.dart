@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 import 'dart:ui' as ui;
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -186,7 +185,7 @@ class MapController extends ChangeNotifier {
         if (status.isPermanentlyDenied) {
           // The user opted to never again see the permission request dialog
           if (kDebugMode) {
-            print(
+            debugPrint(
               'Location permission permanently denied. Please enable in settings.',
             );
           }
@@ -198,13 +197,13 @@ class MapController extends ChangeNotifier {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         if (kDebugMode) {
-          print('Location services disabled. Opening settings...');
+          debugPrint('Location services disabled. Opening settings...');
         }
         await Geolocator.openLocationSettings();
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error checking location permission: $e');
+        debugPrint('Error checking location permission: $e');
       }
     }
   }
@@ -243,7 +242,7 @@ class MapController extends ChangeNotifier {
 
     try {
       if (kDebugMode) {
-        print(
+        debugPrint(
           'Requesting directions from: ${start.latitude},${start.longitude} to ${end.latitude},${end.longitude}',
         );
       }
@@ -253,7 +252,7 @@ class MapController extends ChangeNotifier {
         final data = response.data;
 
         if (kDebugMode) {
-          print('Response status: ${data['status']}');
+          debugPrint('Response status: ${data['status']}');
         }
 
         if (data['routes'].isNotEmpty) {
@@ -299,17 +298,17 @@ class MapController extends ChangeNotifier {
             notifyListeners();
           } else {
             if (kDebugMode) {
-              print('No polyline coordinates found in the response.');
+              debugPrint('No polyline coordinates found in the response.');
             }
           }
         } else {
           if (kDebugMode) {
-            print('No routes found in the response.');
+            debugPrint('No routes found in the response.');
           }
         }
       } else {
         if (kDebugMode) {
-          print(
+          debugPrint(
             'Direction API request failed with status: ${response.statusCode}',
           );
         }
@@ -319,7 +318,7 @@ class MapController extends ChangeNotifier {
       // await generateNearbyTransportMarkers(markerIconBike);
     } catch (e) {
       if (kDebugMode) {
-        print('Error drawing route: $e');
+        debugPrint('Error drawing route: $e');
       }
     }
   }
@@ -377,8 +376,8 @@ class MapController extends ChangeNotifier {
           final durationMinutes = durationValue / 60.0; // Convert to minutes
 
           if (kDebugMode) {
-            print('Distance: $distanceText ($distanceKm km)');
-            print(
+            debugPrint('Distance: $distanceText ($distanceKm km)');
+            debugPrint(
               'Duration: $durationText (${durationMinutes.round()} minutes)',
             );
           }
@@ -394,7 +393,7 @@ class MapController extends ChangeNotifier {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error calculating distance and time: $e');
+        debugPrint('Error calculating distance and time: $e');
       }
     }
 
@@ -427,7 +426,7 @@ class MapController extends ChangeNotifier {
         results[mode] = result;
       } catch (e) {
         if (kDebugMode) {
-          print('Error calculating time for mode $mode: $e');
+          debugPrint('Error calculating time for mode $mode: $e');
         }
         // Use fallback calculation
         final distance = calculateStraightLineDistance(start, end);
@@ -531,7 +530,7 @@ class MapController extends ChangeNotifier {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error calculating ride routes: $e');
+        debugPrint('Error calculating ride routes: $e');
       }
       _calculateFallbackRoutes(start, end, results);
     }
@@ -645,7 +644,7 @@ class MapController extends ChangeNotifier {
         await getRideOptions(start, end);
       } catch (e) {
         if (kDebugMode) {
-          print('Error pre-calculating ride options: $e');
+          debugPrint('Error pre-calculating ride options: $e');
         }
       }
     }
@@ -808,45 +807,45 @@ class MapController extends ChangeNotifier {
     return '$displayHour:$minute $period';
   }
 
-  void onPlaceSelected(double lat, double lng, placeName) {
-    LatLng selected = LatLng(lat, lng);
+  // void onPlaceSelected(double lat, double lng, placeName) {
+  //   LatLng selected = LatLng(lat, lng);
 
-    // Clear route cache when destination changes
-    clearRouteCache();
+  //   // Clear route cache when destination changes
+  //   clearRouteCache();
 
-    // Remove existing destination marker if it exists
-    markers.removeWhere((marker) => marker.markerId.value == 'destination');
+  //   // Remove existing destination marker if it exists
+  //   markers.removeWhere((marker) => marker.markerId.value == 'destination');
 
-    // Add new destination marker
-    markers.add(
-      Marker(
-        markerId: MarkerId('destination'),
-        position: selected,
-        icon: markerIconRed,
-        infoWindow: InfoWindow(title: placeName),
-      ),
-    );
+  //   // Add new destination marker
+  //   markers.add(
+  //     Marker(
+  //       markerId: MarkerId('destination'),
+  //       position: selected,
+  //       icon: markerIconRed,
+  //       infoWindow: InfoWindow(title: placeName),
+  //     ),
+  //   );
 
-    notifyListeners();
+  //   notifyListeners();
 
-    if (mapController != null) {
-      mapController!.animateCamera(CameraUpdate.newLatLngZoom(selected, 14));
-    }
+  //   if (mapController != null) {
+  //     mapController!.animateCamera(CameraUpdate.newLatLngZoom(selected, 14));
+  //   }
 
-    // Check if we have current position and draw route
-    if (currentPosition != null) {
-      drawRoute(currentPosition!, selected);
-    } else {
-      // If we don't have current position, try to get it first
-      getCurrentLocation().then((_) {
-        if (currentPosition != null) {
-          drawRoute(currentPosition!, selected);
-        }
-      });
-    }
+  //   // Check if we have current position and draw route
+  //   if (currentPosition != null) {
+  //     drawRoute(currentPosition!, selected);
+  //   } else {
+  //     // If we don't have current position, try to get it first
+  //     getCurrentLocation().then((_) {
+  //       if (currentPosition != null) {
+  //         drawRoute(currentPosition!, selected);
+  //       }
+  //     });
+  //   }
 
-    plotRandomRiderMarkers(markerIconTaxiCar);
-  }
+  //   plotRandomRiderMarkers('markerIconTaxiCar', pickupLatLng);
+  // }
 
   void moveToCurrentLocation() {
     if (currentPosition != null && mapController != null) {
@@ -887,7 +886,7 @@ class MapController extends ChangeNotifier {
   List<LatLng> generateRandomRiderMarkers(LatLng userLocation) {
     final random = Random();
     final int count = 5 + random.nextInt(3); // 5 to 7 markers
-    const double radiusInKm = 2;
+    const double radiusInKm = 1;
     const double earthRadius = 6371.0;
 
     List<LatLng> randomMarkers = [];
@@ -924,10 +923,27 @@ class MapController extends ChangeNotifier {
     return randomMarkers;
   }
 
-  plotRandomRiderMarkers([BitmapDescriptor? riderMarkerIcon]) {
-    final randomMarkers = generateRandomRiderMarkers(currentPosition!);
+  plotRandomRiderMarkers(String s, LatLng pickupLatLng) {
+    debugPrint('Plotting random rider markers for type: $s \n\n\n\n\n\n');
+    BitmapDescriptor riderMarkerIcon;
+    switch (s) {
+      case 'Car':
+        riderMarkerIcon = markerIconTaxiCar;
+        break;
+      case 'Auto':
+        riderMarkerIcon = markerIconTaxiAuto;
+        break;
+      case 'Bike':
+      default:
+        riderMarkerIcon = markerIconBike;
+        break;
+    }
+
+    final randomMarkers = generateRandomRiderMarkers(pickupLatLng);
 
     for (int i = 0; i < randomMarkers.length; i++) {
+      markers.removeWhere((marker) => marker.markerId.value == 'rider_$i');
+
       markers.add(
         Marker(
           markerId: MarkerId('rider_$i'),

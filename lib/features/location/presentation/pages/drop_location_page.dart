@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
@@ -5,7 +6,7 @@ import '../provider/location_provider.dart';
 import '../../../map/presentation/pages/map_home_page.dart';
 
 class DropLocationPage extends StatefulWidget {
-  const DropLocationPage({Key? key}) : super(key: key);
+  const DropLocationPage({super.key});
 
   @override
   State<DropLocationPage> createState() => _DropLocationPageState();
@@ -15,14 +16,17 @@ class _DropLocationPageState extends State<DropLocationPage> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _showSuggestions = false;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
     super.initState();
-    // Initialize the provider for drop location
+    // Initialize the provider for drop location (non-blocking)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LocationProvider>().switchMode(LocationMode.drop);
-      context.read<LocationProvider>().init();
+      final provider = context.read<LocationProvider>();
+      provider.switchMode(LocationMode.drop);
+      // Load data asynchronously without blocking UI
+      _initializeAsync(provider);
     });
 
     // Listen to focus changes for showing/hiding suggestions
@@ -32,20 +36,35 @@ class _DropLocationPageState extends State<DropLocationPage> {
       });
     });
 
-    // Listen to text changes for search
+    // Listen to text changes for search with debounce
     _searchController.addListener(_onSearchChanged);
+  }
+
+  // Initialize provider data asynchronously
+  Future<void> _initializeAsync(LocationProvider provider) async {
+    // Don't call init() if data is already available
+    if (provider.recentLocations.isEmpty || provider.currentLocation == null) {
+      await provider.init();
+    }
   }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
   }
 
   void _onSearchChanged() {
-    final provider = context.read<LocationProvider>();
-    provider.searchLocations(_searchController.text);
+    // Cancel previous timer if it exists
+    _debounceTimer?.cancel();
+    
+    // Start new timer for debounced search
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      final provider = context.read<LocationProvider>();
+      provider.searchLocations(_searchController.text);
+    });
   }
 
   @override
@@ -78,7 +97,6 @@ class _DropLocationPageState extends State<DropLocationPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSearchBar(provider),
-              _buildSelectOnMapButton(context, provider),
               Padding(
                 padding: const EdgeInsets.only(
                   left: 16.0,
@@ -143,57 +161,6 @@ class _DropLocationPageState extends State<DropLocationPage> {
           filled: true,
           fillColor: Colors.grey[200],
           contentPadding: const EdgeInsets.symmetric(vertical: 10),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSelectOnMapButton(
-    BuildContext context,
-    LocationProvider provider,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: OutlinedButton.icon(
-        onPressed: () async {
-          // Navigate to map selection screen
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MapHomePage(
-                isPickupSelection: false, // This is drop selection
-                initialLocation: provider.currentLocation,
-              ),
-            ),
-          );
-
-          if (result != null && result is LatLng) {
-            // Process the selected location from map
-            provider.createLocationFromLatLng(
-              result,
-              'Selected Location',
-              'Location selected on map',
-            );
-            Navigator.pop(context); // Return to previous screen
-          }
-        },
-        icon: const Icon(Icons.map_outlined, color: Colors.red, size: 18),
-        label: const Text(
-          'Select on map',
-          style: TextStyle(
-            color: Colors.red,
-            fontWeight: FontWeight.w500,
-            fontSize: 15,
-          ),
-        ),
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Colors.red),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          backgroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 48),
         ),
       ),
     );

@@ -5,7 +5,7 @@ import 'package:goyatri/features/location/presentation/pages/pickup_location_pag
 import 'package:goyatri/features/location/presentation/pages/drop_location_page.dart';
 
 class RideBookingCard extends StatelessWidget {
-  const RideBookingCard({Key? key}) : super(key: key);
+  const RideBookingCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +25,7 @@ class RideBookingCard extends StatelessWidget {
               children: [
                 // Header Section
                 Text(
-                  'Pickup',
+                  'Where You Want To Go',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 16),
@@ -77,7 +77,7 @@ class RideBookingCard extends StatelessWidget {
           ),
         ),
         child: const Text(
-          'VIEW ROUTE',
+          'Book Ride',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),

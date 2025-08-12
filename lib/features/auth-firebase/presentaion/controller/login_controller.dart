@@ -55,10 +55,9 @@ class LoginController with ChangeNotifier {
           _otpSent = true;
           _setError(null);
           _setLoading(false);
-          print('Code sent to $phone');
         },
         codeAutoRetrievalTimeout: (String verificationId) {
-          print('Code auto-retrieval timeout');
+          // Timeout handled
         },
       );
     } catch (e) {
@@ -96,10 +95,9 @@ class LoginController with ChangeNotifier {
           _verificationId = verificationId;
           _setError(null);
           _setLoading(false);
-          print('Code resent to $phone');
         },
         codeAutoRetrievalTimeout: (String verificationId) {
-          print('Resend code auto-retrieval timeout');
+          // Timeout handled
         },
       );
     } catch (e) {
@@ -123,14 +121,11 @@ class LoginController with ChangeNotifier {
         smsCode: smsOtp,
       );
 
-      UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithCredential(credential);
+      await FirebaseAuth.instance.signInWithCredential(credential);
 
-      print('✅ Phone number verified. UID: ${userCredential.user?.uid}');
       Get.offNamed(AppRoutes.home);
     } catch (e) {
       _setError('Invalid OTP or Verification Failed: ${e.toString()}');
-      print('❌ Verification Failed: $e');
     } finally {
       _setLoading(false);
     }

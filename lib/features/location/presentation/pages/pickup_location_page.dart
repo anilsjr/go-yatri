@@ -1,11 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../provider/location_provider.dart';
 import '../../../map/presentation/pages/map_home_page.dart';
 
 class PickupLocationPage extends StatefulWidget {
-  const PickupLocationPage({Key? key}) : super(key: key);
+  const PickupLocationPage({super.key});
 
   @override
   State<PickupLocationPage> createState() => _PickupLocationPageState();
@@ -19,10 +19,12 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
   @override
   void initState() {
     super.initState();
-    // Initialize the provider for pickup location
+    // Initialize the provider for pickup location (non-blocking)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LocationProvider>().switchMode(LocationMode.pickup);
-      context.read<LocationProvider>().init();
+      final provider = context.read<LocationProvider>();
+      provider.switchMode(LocationMode.pickup);
+      // Load data asynchronously without blocking UI
+      _initializeAsync(provider);
     });
 
     // Listen to focus changes for showing/hiding suggestions
@@ -32,20 +34,37 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
       });
     });
 
-    // Listen to text changes for search
+    // Listen to text changes for search with debounce
     _searchController.addListener(_onSearchChanged);
+  }
+
+  // Initialize provider data asynchronously
+  Future<void> _initializeAsync(LocationProvider provider) async {
+    // Don't call init() if data is already available
+    if (provider.recentLocations.isEmpty || provider.currentLocation == null) {
+      await provider.init();
+    }
   }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
   }
 
+  Timer? _debounceTimer;
+
   void _onSearchChanged() {
-    final provider = context.read<LocationProvider>();
-    provider.searchLocations(_searchController.text);
+    // Cancel previous timer if it exists
+    _debounceTimer?.cancel();
+    
+    // Start new timer for debounced search
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      final provider = context.read<LocationProvider>();
+      provider.searchLocations(_searchController.text);
+    });
   }
 
   @override
@@ -68,44 +87,48 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
           ),
         ),
       ),
-      body: Consumer<LocationProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildCurrentLocationItem(provider),
-              _buildSearchBar(provider),
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: 16.0,
-                  top: 16.0,
-                  bottom: 8.0,
-                ),
-                child: Text(
-                  'RECENT LOCATIONS',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildCurrentLocationItem(),
+          _buildSearchBar(),
+          Padding(
+            padding: const EdgeInsets.only(
+              left: 16.0,
+              top: 16.0,
+              bottom: 8.0,
+            ),
+            child: Text(
+              'RECENT LOCATIONS',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                letterSpacing: 0.5,
               ),
-              Expanded(
-                child: _showSuggestions && provider.searchResults.isNotEmpty
-                    ? _buildSearchResults(provider)
-                    : _buildRecentLocations(provider),
-              ),
-              if (provider.selectedPickupLocation != null &&
-                  provider.selectedDropLocation != null)
-                _buildViewRouteButton(context, provider),
-            ],
-          );
-        },
+            ),
+          ),
+          // Use Selector for the list to avoid unnecessary rebuilds
+          Expanded(
+            child: Selector<LocationProvider, bool>(
+              selector: (_, provider) => provider.searchResults.isNotEmpty,
+              builder: (context, hasSearchResults, child) {
+                return _showSuggestions && hasSearchResults
+                    ? _buildSearchResults()
+                    : _buildRecentLocations();
+              },
+            ),
+          ),
+          // Use Selector for the button to only rebuild when both locations are selected
+          Selector<LocationProvider, bool>(
+            selector: (_, provider) => 
+                provider.selectedPickupLocation != null &&
+                provider.selectedDropLocation != null,
+            builder: (context, showButton, child) {
+              return showButton ? _buildViewRouteButton(context) : const SizedBox.shrink();
+            },
+          ),
+        ],
       ),
     );
   }

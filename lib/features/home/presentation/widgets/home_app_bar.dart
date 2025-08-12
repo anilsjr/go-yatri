@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:goyatri/features/location/presentation/provider/location_provider.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Function()? onMenuTap;

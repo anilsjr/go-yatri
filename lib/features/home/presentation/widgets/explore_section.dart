@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:goyatri/features/home/presentation/widgets/ride_booking_card.dart';
 
 class ExploreSection extends StatelessWidget {
-  const ExploreSection({Key? key}) : super(key: key);
+  const ExploreSection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -68,11 +68,10 @@ class _ExploreItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const _ExploreItem({
-    Key? key,
     required this.title,
     required this.imagePath,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

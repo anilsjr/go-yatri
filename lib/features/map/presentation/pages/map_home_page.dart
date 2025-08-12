@@ -12,13 +12,13 @@ class MapHomePage extends StatefulWidget {
   final LatLng? initialLocation;
 
   const MapHomePage({
-    Key? key,
+    super.key,
     this.pickupLocation,
     this.dropLocation,
     this.isPickupSelection = false,
     this.showRoute = false,
     this.initialLocation,
-  }) : super(key: key);
+  });
 
   @override
   State<MapHomePage> createState() => _MapHomePageState();
@@ -125,8 +125,10 @@ class _MapHomePageState extends State<MapHomePage> {
     // Draw route between the two points
     _mapController.drawRoute(pickupLatLng, dropLatLng);
 
-    //load rider markers
-    _mapController.plotRandomRiderMarkers();
+    // Only load rider markers when showRoute is true (i.e., when 'VIEW ROUTE' button was clicked)
+    if (widget.showRoute) {
+      _mapController.plotRandomRiderMarkers('Bike', pickupLatLng);
+    }
   }
 
   bool isRouteView = false;
@@ -276,7 +278,7 @@ class _MapHomePageState extends State<MapHomePage> {
     try {
       return await _mapController.getRideOptions(pickupLatLng, dropLatLng);
     } catch (e) {
-      print('Error getting ride options: $e');
+      debugPrint('Error getting ride options: $e');
       return _getDefaultRideOptions();
     }
   }
@@ -441,7 +443,7 @@ class _MapHomePageState extends State<MapHomePage> {
     final optionTitle = selectedOption?['title'] ?? 'Cab Economy';
 
     return SizedBox(
-      width: double.infinity,
+      width: double.infinity - 50,
       height: 50,
       child: ElevatedButton(
         onPressed: () {
@@ -560,3 +562,4 @@ class _MapHomePageState extends State<MapHomePage> {
     return _cachedRideOptionsFuture!;
   }
 }
+

@@ -3,7 +3,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../../data/models/location_model.dart';
 import '../../data/repositories/location_repository_impl.dart';
-import '../../domain/repositories/location_selection_repository.dart';
 
 enum LocationMode { pickup, drop }
 
@@ -19,6 +18,11 @@ class LocationProvider extends ChangeNotifier {
   LatLng? _currentLocation;
   LocationModel? _selectedPickupLocation;
   LocationModel? _selectedDropLocation;
+  
+  // Cache flags to avoid redundant API calls
+  bool _isInitialized = false;
+  bool _isCurrentLocationLoaded = false;
+  bool _areRecentLocationsLoaded = false;
 
   // Getters
   LocationMode get mode => _mode;
@@ -34,31 +38,45 @@ class LocationProvider extends ChangeNotifier {
       ? _selectedPickupLocation
       : _selectedDropLocation;
 
-  // Initialize the provider
+  // Initialize the provider with caching
   Future<void> init() async {
+    if (_isInitialized) return; // Avoid redundant initialization
+    
     _setLoading(true);
-    await _loadCurrentLocation();
-    await _loadRecentLocations();
+    
+    // Load data in parallel for faster initialization
+    await Future.wait([
+      _loadCurrentLocation(),
+      _loadRecentLocations(),
+    ]);
+    
+    _isInitialized = true;
     _setLoading(false);
   }
 
-  // Load user's current location
+  // Load user's current location with caching
   Future<void> _loadCurrentLocation() async {
+    if (_isCurrentLocationLoaded && _currentLocation != null) return;
+    
     try {
       _currentLocation = await _repository.getCurrentLocation();
+      _isCurrentLocationLoaded = true;
       notifyListeners();
     } catch (e) {
-      print('Error loading current location: $e');
+      debugPrint('Error loading current location: $e');
     }
   }
 
-  // Load recent locations from storage
+  // Load recent locations from storage with caching
   Future<void> _loadRecentLocations() async {
+    if (_areRecentLocationsLoaded && _recentLocations.isNotEmpty) return;
+    
     try {
       _recentLocations = await _repository.getRecentLocations();
+      _areRecentLocationsLoaded = true;
       notifyListeners();
     } catch (e) {
-      print('Error loading recent locations: $e');
+      debugPrint('Error loading recent locations: $e');
     }
   }
 
@@ -84,7 +102,7 @@ class LocationProvider extends ChangeNotifier {
     try {
       _searchResults = await _repository.searchPlaces(query);
     } catch (e) {
-      print('Error searching locations: $e');
+      debugPrint('Error searching locations: $e');
       _searchResults = [];
     }
 
@@ -129,9 +147,11 @@ class LocationProvider extends ChangeNotifier {
   Future<void> _saveToRecentLocations(LocationModel location) async {
     try {
       await _repository.saveLocation(location);
-      await _loadRecentLocations(); // Reload the list
+      // Invalidate cache and reload
+      _areRecentLocationsLoaded = false;
+      await _loadRecentLocations();
     } catch (e) {
-      print('Error saving to recent locations: $e');
+      debugPrint('Error saving to recent locations: $e');
     }
   }
 
@@ -139,9 +159,11 @@ class LocationProvider extends ChangeNotifier {
   Future<void> toggleFavorite(String locationId) async {
     try {
       await _repository.toggleFavorite(locationId);
-      await _loadRecentLocations(); // Reload to reflect changes
+      // Invalidate cache and reload
+      _areRecentLocationsLoaded = false;
+      await _loadRecentLocations();
     } catch (e) {
-      print('Error toggling favorite: $e');
+      debugPrint('Error toggling favorite: $e');
     }
   }
 

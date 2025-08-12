@@ -129,10 +129,12 @@ class _SignupPageState extends State<SignupPage> {
                           child: ElevatedButton(
                             onPressed: () {
                               if (_formKey.currentState!.validate()) {
-                                // TODO: Implement signup logic
+                                // Signup functionality to be implemented
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Creating account...'),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Signup feature coming soon!',
+                                    ),
                                   ),
                                 );
                               }
