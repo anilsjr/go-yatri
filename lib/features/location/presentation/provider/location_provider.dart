@@ -18,7 +18,7 @@ class LocationProvider extends ChangeNotifier {
   LatLng? _currentLocation;
   LocationModel? _selectedPickupLocation;
   LocationModel? _selectedDropLocation;
-  
+
   // Cache flags to avoid redundant API calls
   bool _isInitialized = false;
   bool _isCurrentLocationLoaded = false;
@@ -41,15 +41,12 @@ class LocationProvider extends ChangeNotifier {
   // Initialize the provider with caching
   Future<void> init() async {
     if (_isInitialized) return; // Avoid redundant initialization
-    
+
     _setLoading(true);
-    
+
     // Load data in parallel for faster initialization
-    await Future.wait([
-      _loadCurrentLocation(),
-      _loadRecentLocations(),
-    ]);
-    
+    await Future.wait([_loadCurrentLocation(), _loadRecentLocations()]);
+
     _isInitialized = true;
     _setLoading(false);
   }
@@ -57,7 +54,7 @@ class LocationProvider extends ChangeNotifier {
   // Load user's current location with caching
   Future<void> _loadCurrentLocation() async {
     if (_isCurrentLocationLoaded && _currentLocation != null) return;
-    
+
     try {
       _currentLocation = await _repository.getCurrentLocation();
       _isCurrentLocationLoaded = true;
@@ -70,7 +67,7 @@ class LocationProvider extends ChangeNotifier {
   // Load recent locations from storage with caching
   Future<void> _loadRecentLocations() async {
     if (_areRecentLocationsLoaded && _recentLocations.isNotEmpty) return;
-    
+
     try {
       _recentLocations = await _repository.getRecentLocations();
       _areRecentLocationsLoaded = true;

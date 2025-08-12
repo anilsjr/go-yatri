@@ -336,7 +336,7 @@ class _MapHomePageState extends State<MapHomePage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           border: Border.all(
             color: isSelected ? Colors.black : Colors.grey[300]!,
@@ -346,7 +346,7 @@ class _MapHomePageState extends State<MapHomePage> {
           color: isSelected ? Colors.black.withOpacity(0.05) : Colors.white,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(8),
           child: Row(
             children: [
               // Icon
@@ -356,11 +356,15 @@ class _MapHomePageState extends State<MapHomePage> {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? Colors.black.withOpacity(0.1)
-                      : Colors.grey[100],
+                      : const Color.fromARGB(255, 255, 255, 250),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
-                  child: Text(icon, style: const TextStyle(fontSize: 24)),
+                  child: Image.asset(
+                    'assets/icons/$icon.png',
+                    width: isSelected ? 30 : 26,
+                    height: isSelected ? 30 : 26,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -383,7 +387,7 @@ class _MapHomePageState extends State<MapHomePage> {
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
+                              horizontal: 4,
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
@@ -394,14 +398,14 @@ class _MapHomePageState extends State<MapHomePage> {
                               'FASTEST',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 10,
+                                fontSize: 8,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                         ],
                         if (badge != null) ...[
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 4),
                           Text(
                             badge,
                             style: const TextStyle(
@@ -499,7 +503,7 @@ class _MapHomePageState extends State<MapHomePage> {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
                         child: Padding(
-                          padding: EdgeInsets.all(20),
+                          padding: EdgeInsets.all(16.0),
                           child: CircularProgressIndicator(),
                         ),
                       );
@@ -523,6 +527,31 @@ class _MapHomePageState extends State<MapHomePage> {
                             if (option['id'] != null) {
                               _mapController.selectTransportOption(
                                 option['id'],
+                              );
+                              
+                              // Map option IDs to appropriate marker types
+                              String vehicleType;
+                              switch (option['id']) {
+                                case 'car_economy':
+                                case 'car_premium':
+                                  vehicleType = 'Cab';
+                                  break;
+                                case 'auto':
+                                  vehicleType = 'Auto';
+                                  break;
+                                case 'bike':
+                                default:
+                                  vehicleType = 'Bike';
+                                  break;
+                              }
+                              
+                              print('Plotting random rider markers for $vehicleType');
+                              _mapController.plotRandomRiderMarkers(
+                                vehicleType,
+                                LatLng(
+                                  widget.pickupLocation?.latitude ?? 0,
+                                  widget.pickupLocation?.longitude ?? 0,
+                                ),
                               );
                             }
                           },
@@ -562,4 +591,3 @@ class _MapHomePageState extends State<MapHomePage> {
     return _cachedRideOptionsFuture!;
   }
 }
-

@@ -706,7 +706,7 @@ class MapController extends ChangeNotifier {
     final options = [
       {
         'id': 'bike',
-        'icon': '🏍️',
+        'icon': 'motorbike',
         'title': 'Bike',
         'subtitle':
             '${routes['bike']?['duration_text'] ?? '2 mins'} • Drop ${_getEstimatedArrival(routes['bike']?['duration_minutes'] ?? 2)}',
@@ -716,10 +716,10 @@ class MapController extends ChangeNotifier {
       },
       {
         'id': 'car_economy',
-        'icon': '🚕',
+        'icon': 'car',
         'title': 'Cab Economy',
         'subtitle':
-            'Affordable car rides\n${routes['car']?['duration_text'] ?? '2 mins'} away • Drop ${_getEstimatedArrival(routes['car']?['duration_minutes'] ?? 2)}',
+            '${routes['car']?['duration_text'] ?? '2 mins'} away • Drop ${_getEstimatedArrival(routes['car']?['duration_minutes'] ?? 2)}',
         'price': '₹${prices['car_economy']?.round() ?? 138}',
         'isSelected': _selectedTransportOption == 'car_economy',
         'badge': '',
@@ -727,7 +727,7 @@ class MapController extends ChangeNotifier {
       },
       {
         'id': 'auto',
-        'icon': '🛺',
+        'icon': 'auto_marker',
         'title': 'Auto',
         'subtitle':
             '${routes['auto']?['duration_text'] ?? '2 mins'} • Drop ${_getEstimatedArrival(routes['auto']?['duration_minutes'] ?? 2)}',
@@ -737,7 +737,7 @@ class MapController extends ChangeNotifier {
       },
       {
         'id': 'car_premium',
-        'icon': '🚗',
+        'icon': 'car',
         'title': 'Cab Premium',
         'subtitle':
             '${routes['car']?['duration_text'] ?? '2 mins'} • Drop ${_getEstimatedArrival(routes['car']?['duration_minutes'] ?? 2)}',
@@ -885,7 +885,7 @@ class MapController extends ChangeNotifier {
 
   List<LatLng> generateRandomRiderMarkers(LatLng userLocation) {
     final random = Random();
-    final int count = 5 + random.nextInt(3); // 5 to 7 markers
+    final int count = 5;
     const double radiusInKm = 1;
     const double earthRadius = 6371.0;
 
@@ -927,7 +927,7 @@ class MapController extends ChangeNotifier {
     debugPrint('Plotting random rider markers for type: $s \n\n\n\n\n\n');
     BitmapDescriptor riderMarkerIcon;
     switch (s) {
-      case 'Car':
+      case 'Cab':
         riderMarkerIcon = markerIconTaxiCar;
         break;
       case 'Auto':

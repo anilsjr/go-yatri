@@ -59,7 +59,7 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
   void _onSearchChanged() {
     // Cancel previous timer if it exists
     _debounceTimer?.cancel();
-    
+
     // Start new timer for debounced search
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       final provider = context.read<LocationProvider>();
@@ -87,56 +87,67 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
           ),
         ),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildCurrentLocationItem(),
-          _buildSearchBar(),
-          Padding(
-            padding: const EdgeInsets.only(
-              left: 16.0,
-              top: 16.0,
-              bottom: 8.0,
-            ),
-            child: Text(
-              'RECENT LOCATIONS',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-                letterSpacing: 0.5,
+      body: Selector<LocationProvider, bool>(
+        selector: (_, provider) => provider.isLoading,
+        builder: (context, isLoading, child) {
+          if (isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildCurrentLocationItem(),
+              _buildSearchBar(),
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: 16.0,
+                  top: 16.0,
+                  bottom: 8.0,
+                ),
+                child: Text(
+                  'RECENT LOCATIONS',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    letterSpacing: 0.5,
+                  ),
+                ),
               ),
-            ),
-          ),
-          // Use Selector for the list to avoid unnecessary rebuilds
-          Expanded(
-            child: Selector<LocationProvider, bool>(
-              selector: (_, provider) => provider.searchResults.isNotEmpty,
-              builder: (context, hasSearchResults, child) {
-                return _showSuggestions && hasSearchResults
-                    ? _buildSearchResults()
-                    : _buildRecentLocations();
-              },
-            ),
-          ),
-          // Use Selector for the button to only rebuild when both locations are selected
-          Selector<LocationProvider, bool>(
-            selector: (_, provider) => 
-                provider.selectedPickupLocation != null &&
-                provider.selectedDropLocation != null,
-            builder: (context, showButton, child) {
-              return showButton ? _buildViewRouteButton(context) : const SizedBox.shrink();
-            },
-          ),
-        ],
+              // Use Selector for the list to avoid unnecessary rebuilds
+              Expanded(
+                child: Selector<LocationProvider, bool>(
+                  selector: (_, provider) => provider.searchResults.isNotEmpty,
+                  builder: (context, hasSearchResults, child) {
+                    return _showSuggestions && hasSearchResults
+                        ? _buildSearchResults()
+                        : _buildRecentLocations();
+                  },
+                ),
+              ),
+              // Use Selector for the button to only rebuild when both locations are selected
+              Selector<LocationProvider, bool>(
+                selector: (_, provider) =>
+                    provider.selectedPickupLocation != null &&
+                    provider.selectedDropLocation != null,
+                builder: (context, showButton, child) {
+                  return showButton
+                      ? _buildViewRouteButton(context)
+                      : const SizedBox.shrink();
+                },
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildCurrentLocationItem(LocationProvider provider) {
+  Widget _buildCurrentLocationItem() {
     return InkWell(
       onTap: () {
-        provider.selectCurrentLocation();
+        context.read<LocationProvider>().selectCurrentLocation();
         Navigator.pop(context); // Return to home screen
       },
       child: Padding(
@@ -176,7 +187,7 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
     );
   }
 
-  Widget _buildSearchBar(LocationProvider provider) {
+  Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: TextField(
@@ -190,7 +201,7 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
                   icon: const Icon(Icons.clear),
                   onPressed: () {
                     _searchController.clear();
-                    provider.clearSearchResults();
+                    context.read<LocationProvider>().clearSearchResults();
                   },
                 )
               : null,
@@ -214,38 +225,46 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
     );
   }
 
-  Widget _buildSearchResults(LocationProvider provider) {
-    return ListView.builder(
-      padding: EdgeInsets.zero,
-      itemCount: provider.searchResults.length,
-      itemBuilder: (context, index) {
-        final location = provider.searchResults[index];
-        return _buildLocationTile(location, provider);
+  Widget _buildSearchResults() {
+    return Consumer<LocationProvider>(
+      builder: (context, provider, child) {
+        return ListView.builder(
+          padding: EdgeInsets.zero,
+          itemCount: provider.searchResults.length,
+          itemBuilder: (context, index) {
+            final location = provider.searchResults[index];
+            return _buildLocationTile(location);
+          },
+        );
       },
     );
   }
 
-  Widget _buildRecentLocations(LocationProvider provider) {
-    if (provider.recentLocations.isEmpty) {
-      return const Center(child: Text('No recent locations'));
-    }
+  Widget _buildRecentLocations() {
+    return Consumer<LocationProvider>(
+      builder: (context, provider, child) {
+        if (provider.recentLocations.isEmpty) {
+          return const Center(child: Text('No recent locations'));
+        }
 
-    return ListView.builder(
-      padding: EdgeInsets.zero,
-      itemCount: provider.recentLocations.length,
-      itemBuilder: (context, index) {
-        final location = provider.recentLocations[index];
-        return _buildLocationTile(location, provider);
+        return ListView.builder(
+          padding: EdgeInsets.zero,
+          itemCount: provider.recentLocations.length,
+          itemBuilder: (context, index) {
+            final location = provider.recentLocations[index];
+            return _buildLocationTile(location);
+          },
+        );
       },
     );
   }
 
-  Widget _buildLocationTile(location, LocationProvider provider) {
+  Widget _buildLocationTile(location) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: InkWell(
         onTap: () {
-          provider.selectLocation(location);
+          context.read<LocationProvider>().selectLocation(location);
           Navigator.pop(context); // Return to previous screen
         },
         child: Row(
@@ -281,7 +300,8 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
                 color: location.isFavorite ? Colors.red : Colors.grey,
                 size: 22,
               ),
-              onPressed: () => provider.toggleFavorite(location.id),
+              onPressed: () =>
+                  context.read<LocationProvider>().toggleFavorite(location.id),
             ),
           ],
         ),
@@ -289,38 +309,39 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
     );
   }
 
-  Widget _buildViewRouteButton(
-    BuildContext context,
-    LocationProvider provider,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ElevatedButton(
-        onPressed: () {
-          // Navigate to map view with pickup and drop locations
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MapHomePage(
-                pickupLocation: provider.selectedPickupLocation,
-                dropLocation: provider.selectedDropLocation,
+  Widget _buildViewRouteButton(BuildContext context) {
+    return Consumer<LocationProvider>(
+      builder: (context, provider, child) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton(
+            onPressed: () {
+              // Navigate to map view with pickup and drop locations
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MapHomePage(
+                    pickupLocation: provider.selectedPickupLocation,
+                    dropLocation: provider.selectedDropLocation,
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
               ),
             ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
-          foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 50),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25),
+            child: const Text(
+              'VIEW ROUTE',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ),
-        ),
-        child: const Text(
-          'VIEW ROUTE',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ),
+        );
+      },
     );
   }
 }

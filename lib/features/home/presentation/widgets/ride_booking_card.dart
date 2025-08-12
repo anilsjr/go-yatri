@@ -62,7 +62,7 @@ class RideBookingCard extends StatelessWidget {
               'pickupLocation': provider.selectedPickupLocation,
               'dropLocation': provider.selectedDropLocation,
               'isPickupSelection':
-                  false, // Changed to false - not selecting, just viewing route
+                  true, // Changed to false - not selecting, just viewing route
               'showRoute':
                   true, // Add flag to indicate we want to show the route
             },

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../provider/location_provider.dart';
 import '../../../map/presentation/pages/map_home_page.dart';
@@ -59,7 +58,7 @@ class _DropLocationPageState extends State<DropLocationPage> {
   void _onSearchChanged() {
     // Cancel previous timer if it exists
     _debounceTimer?.cancel();
-    
+
     // Start new timer for debounced search
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
       final provider = context.read<LocationProvider>();
@@ -87,16 +86,17 @@ class _DropLocationPageState extends State<DropLocationPage> {
           ),
         ),
       ),
-      body: Consumer<LocationProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
+      body: Selector<LocationProvider, bool>(
+        selector: (_, provider) => provider.isLoading,
+        builder: (context, isLoading, child) {
+          if (isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSearchBar(provider),
+              _buildSearchBar(),
               Padding(
                 padding: const EdgeInsets.only(
                   left: 16.0,
@@ -114,13 +114,25 @@ class _DropLocationPageState extends State<DropLocationPage> {
                 ),
               ),
               Expanded(
-                child: _showSuggestions && provider.searchResults.isNotEmpty
-                    ? _buildSearchResults(provider)
-                    : _buildRecentLocations(provider),
+                child: Selector<LocationProvider, bool>(
+                  selector: (_, provider) => provider.searchResults.isNotEmpty,
+                  builder: (context, hasSearchResults, child) {
+                    return _showSuggestions && hasSearchResults
+                        ? _buildSearchResults()
+                        : _buildRecentLocations();
+                  },
+                ),
               ),
-              if (provider.selectedPickupLocation != null &&
-                  provider.selectedDropLocation != null)
-                _buildViewRouteButton(context, provider),
+              Selector<LocationProvider, bool>(
+                selector: (_, provider) =>
+                    provider.selectedPickupLocation != null &&
+                    provider.selectedDropLocation != null,
+                builder: (context, showButton, child) {
+                  return showButton
+                      ? _buildViewRouteButton(context)
+                      : const SizedBox.shrink();
+                },
+              ),
             ],
           );
         },
@@ -128,7 +140,7 @@ class _DropLocationPageState extends State<DropLocationPage> {
     );
   }
 
-  Widget _buildSearchBar(LocationProvider provider) {
+  Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: TextField(
@@ -142,7 +154,7 @@ class _DropLocationPageState extends State<DropLocationPage> {
                   icon: const Icon(Icons.clear),
                   onPressed: () {
                     _searchController.clear();
-                    provider.clearSearchResults();
+                    context.read<LocationProvider>().clearSearchResults();
                   },
                 )
               : null,
@@ -166,38 +178,46 @@ class _DropLocationPageState extends State<DropLocationPage> {
     );
   }
 
-  Widget _buildSearchResults(LocationProvider provider) {
-    return ListView.builder(
-      padding: EdgeInsets.zero,
-      itemCount: provider.searchResults.length,
-      itemBuilder: (context, index) {
-        final location = provider.searchResults[index];
-        return _buildLocationTile(location, provider);
+  Widget _buildSearchResults() {
+    return Consumer<LocationProvider>(
+      builder: (context, provider, child) {
+        return ListView.builder(
+          padding: EdgeInsets.zero,
+          itemCount: provider.searchResults.length,
+          itemBuilder: (context, index) {
+            final location = provider.searchResults[index];
+            return _buildLocationTile(location);
+          },
+        );
       },
     );
   }
 
-  Widget _buildRecentLocations(LocationProvider provider) {
-    if (provider.recentLocations.isEmpty) {
-      return const Center(child: Text('No recent locations'));
-    }
+  Widget _buildRecentLocations() {
+    return Consumer<LocationProvider>(
+      builder: (context, provider, child) {
+        if (provider.recentLocations.isEmpty) {
+          return const Center(child: Text('No recent locations'));
+        }
 
-    return ListView.builder(
-      padding: EdgeInsets.zero,
-      itemCount: provider.recentLocations.length,
-      itemBuilder: (context, index) {
-        final location = provider.recentLocations[index];
-        return _buildLocationTile(location, provider);
+        return ListView.builder(
+          padding: EdgeInsets.zero,
+          itemCount: provider.recentLocations.length,
+          itemBuilder: (context, index) {
+            final location = provider.recentLocations[index];
+            return _buildLocationTile(location);
+          },
+        );
       },
     );
   }
 
-  Widget _buildLocationTile(location, LocationProvider provider) {
+  Widget _buildLocationTile(location) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: InkWell(
         onTap: () {
-          provider.selectLocation(location);
+          context.read<LocationProvider>().selectLocation(location);
           Navigator.pop(context); // Return to previous screen
         },
         child: Row(
@@ -233,7 +253,8 @@ class _DropLocationPageState extends State<DropLocationPage> {
                 color: location.isFavorite ? Colors.red : Colors.grey,
                 size: 22,
               ),
-              onPressed: () => provider.toggleFavorite(location.id),
+              onPressed: () =>
+                  context.read<LocationProvider>().toggleFavorite(location.id),
             ),
           ],
         ),
@@ -241,38 +262,39 @@ class _DropLocationPageState extends State<DropLocationPage> {
     );
   }
 
-  Widget _buildViewRouteButton(
-    BuildContext context,
-    LocationProvider provider,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: ElevatedButton(
-        onPressed: () {
-          // Navigate to map view with pickup and drop locations
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MapHomePage(
-                pickupLocation: provider.selectedPickupLocation,
-                dropLocation: provider.selectedDropLocation,
+  Widget _buildViewRouteButton(BuildContext context) {
+    return Consumer<LocationProvider>(
+      builder: (context, provider, child) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton(
+            onPressed: () {
+              // Navigate to map view with pickup and drop locations
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MapHomePage(
+                    pickupLocation: provider.selectedPickupLocation,
+                    dropLocation: provider.selectedDropLocation,
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
               ),
             ),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
-          foregroundColor: Colors.white,
-          minimumSize: const Size(double.infinity, 50),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(25),
+            child: const Text(
+              'VIEW ROUTE',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ),
-        ),
-        child: const Text(
-          'VIEW ROUTE',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ),
+        );
+      },
     );
   }
 }
