@@ -287,7 +287,7 @@ class _MapHomePageState extends State<MapHomePage> {
     return [
       {
         'id': 'bike',
-        'icon': '🏍️',
+        'icon': 'motorbike',
         'title': 'Bike',
         'subtitle': '2 mins • Drop 11:53 pm',
         'price': '₹59',
@@ -296,7 +296,7 @@ class _MapHomePageState extends State<MapHomePage> {
       },
       {
         'id': 'car_economy',
-        'icon': '🚗',
+        'icon': 'car',
         'title': 'Cab Economy',
         'subtitle': 'Affordable car rides\n2 mins away • Drop 11:53 pm',
         'price': '₹138',
@@ -305,7 +305,7 @@ class _MapHomePageState extends State<MapHomePage> {
       },
       {
         'id': 'auto',
-        'icon': '🛺',
+        'icon': 'auto_marker',
         'title': 'Auto',
         'subtitle': '2 mins • Drop 11:53 pm',
         'price': '₹111',
@@ -313,7 +313,7 @@ class _MapHomePageState extends State<MapHomePage> {
       },
       {
         'id': 'car_premium',
-        'icon': '🚗',
+        'icon': 'taxi',
         'title': 'Cab Premium',
         'subtitle': '2 mins • Drop 11:53 pm',
         'price': '₹166',
@@ -528,7 +528,7 @@ class _MapHomePageState extends State<MapHomePage> {
                               _mapController.selectTransportOption(
                                 option['id'],
                               );
-                              
+
                               // Map option IDs to appropriate marker types
                               String vehicleType;
                               switch (option['id']) {
@@ -544,8 +544,10 @@ class _MapHomePageState extends State<MapHomePage> {
                                   vehicleType = 'Bike';
                                   break;
                               }
-                              
-                              print('Plotting random rider markers for $vehicleType');
+
+                              print(
+                                'Plotting random rider markers for $vehicleType',
+                              );
                               _mapController.plotRandomRiderMarkers(
                                 vehicleType,
                                 LatLng(
