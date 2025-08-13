@@ -19,30 +19,23 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 8,
-        left: 20,
-        right: 20,
-        bottom: 16,
+        top: MediaQuery.of(context).padding.top + 4,
+        left: 8,
+        right: 8,
+        bottom: 2,
       ),
       child: Row(
         children: [
           // Modern menu button with container
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+          IconButton(
+            icon: const Icon(
+              Icons.menu_rounded,
+              color: Color(0xFF1E293B),
+              size: 22,
             ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.menu_rounded,
-                color: Color(0xFF1E293B),
-                size: 22,
-              ),
-              onPressed: onMenuTap,
-              padding: const EdgeInsets.all(8),
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-            ),
+            onPressed: onMenuTap,
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           ),
 
           const Spacer(),
@@ -61,24 +54,17 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           const Spacer(),
 
           // Profile/notification button
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+          IconButton(
+            icon: const Icon(
+              Icons.notifications_outlined,
+              color: Color(0xFF1E293B),
+              size: 22,
             ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.notifications_outlined,
-                color: Color(0xFF1E293B),
-                size: 22,
-              ),
-              onPressed: () {
-                // Handle notifications
-              },
-              padding: const EdgeInsets.all(8),
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-            ),
+            onPressed: () {
+              // Handle notifications
+            },
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           ),
         ],
       ),

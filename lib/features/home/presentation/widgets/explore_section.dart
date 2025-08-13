@@ -21,7 +21,7 @@ class ExploreSection extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Choose Your Ride',
+                'Our Service',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,

@@ -64,14 +64,13 @@ class RideBookingCard extends StatelessWidget {
                 _buildLocationFields(context, locationProvider),
 
                 const SizedBox(height: 12),
-
+                if (locationProvider.selectedPickupLocation != null &&
+                    locationProvider.selectedDropLocation != null)
+                  _buildBookRideButton(context, locationProvider),
                 // Recent locations
                 _buildRecentLocations(locationProvider),
 
                 // Book Ride button (only show when both pickup and drop are selected)
-                if (locationProvider.selectedPickupLocation != null &&
-                    locationProvider.selectedDropLocation != null)
-                  _buildBookRideButton(context, locationProvider),
               ],
             ),
           ),
