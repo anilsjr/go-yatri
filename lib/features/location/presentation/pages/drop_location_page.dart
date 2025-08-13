@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../provider/location_provider.dart';
 import '../../../map/presentation/pages/map_home_page.dart';
@@ -98,21 +100,9 @@ class _DropLocationPageState extends State<DropLocationPage> {
             children: [
               _buildCurrentLocationItem(),
               _buildSearchBar(),
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: 16.0,
-                  top: 16.0,
-                  bottom: 8.0,
-                ),
-                child: Text(
-                  'RECENT LOCATIONS',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+              const Divider(
+                thickness: 1,
+                color: Color.fromARGB(255, 228, 228, 228),
               ),
               Expanded(
                 child: Selector<LocationProvider, bool>(
@@ -217,6 +207,7 @@ class _DropLocationPageState extends State<DropLocationPage> {
   Widget _buildCurrentLocationItem() {
     return InkWell(
       onTap: () {
+        _checkLocationPermission();
         context.read<LocationProvider>().selectCurrentLocation();
         Navigator.pop(context); // Return to home screen
       },
@@ -255,6 +246,23 @@ class _DropLocationPageState extends State<DropLocationPage> {
         ),
       ),
     );
+  }
+
+  void _checkLocationPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw Exception('Location permissions are denied');
+      }
+      return;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception(
+        'Location permissions are permanently denied, we cannot request permissions.',
+      );
+    }
   }
 
   Widget _buildLocationTile(location) {

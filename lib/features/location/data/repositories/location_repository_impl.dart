@@ -93,8 +93,19 @@ class LocationRepositoryImpl implements LocationSelectionRepository {
   @override
   Future<LatLng> getCurrentLocation() async {
     try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      while (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception(
+          'Location permissions are permanently denied, we cannot request permissions.',
+        );
+      }
+
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        // desiredAccuracy: LocationAccuracy.high,
       );
 
       return LatLng(position.latitude, position.longitude);

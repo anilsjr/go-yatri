@@ -150,11 +150,8 @@ class _MapHomePageState extends State<MapHomePage> {
                             initialCameraPosition: CameraPosition(
                               target:
                                   widget.initialLocation ??
-                                  mapController.currentPosition ??
-                                  const LatLng(
-                                    28.7041,
-                                    77.1025,
-                                  ), // Default: Delhi
+                                  mapController.currentPosition!,
+                              // Default: Delhi
                               zoom: 14,
                             ),
                             markers: mapController.markers,

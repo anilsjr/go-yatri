@@ -90,6 +90,7 @@ class _NewHomePageState extends State<NewHomePage> {
       if (permission == LocationPermission.denied) {
         throw Exception('Location permissions are denied');
       }
+      return;
     }
 
     if (permission == LocationPermission.deniedForever) {
