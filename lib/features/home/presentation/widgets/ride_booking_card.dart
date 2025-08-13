@@ -55,18 +55,38 @@ class RideBookingCard extends StatelessWidget {
       padding: const EdgeInsets.only(top: 16.0),
       child: ElevatedButton(
         onPressed: () {
-          Navigator.pushNamed(
-            context,
-            '/mapHome',
-            arguments: {
-              'pickupLocation': provider.selectedPickupLocation,
-              'dropLocation': provider.selectedDropLocation,
-              'isPickupSelection':
-                  true, // Changed to false - not selecting, just viewing route
-              'showRoute':
-                  true, // Add flag to indicate we want to show the route
-            },
-          );
+          if (provider.selectedPickupLocation == null ||
+              provider.selectedDropLocation == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('please select Pickup and drop location')),
+            );
+            return;
+          }
+          if ((provider.selectedDropLocation?.latitude ==
+                  provider.selectedPickupLocation?.latitude) &&
+              (provider.selectedDropLocation?.longitude ==
+                  provider.selectedPickupLocation?.longitude)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Pickup and drop locations cannot be the same'),
+              ),
+            );
+            return;
+          } else {
+            Navigator.pushNamed(
+              context,
+              '/mapHome',
+              arguments: {
+                'pickupLocation': provider.selectedPickupLocation,
+                'dropLocation': provider.selectedDropLocation,
+                'isPickupSelection':
+                    true, // Changed to false - not selecting, just viewing route
+                'showRoute':
+                    true, // Add flag to indicate we want to show the route
+              },
+            );
+            // return;
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.black,

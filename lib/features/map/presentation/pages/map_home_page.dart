@@ -127,7 +127,7 @@ class _MapHomePageState extends State<MapHomePage> {
 
     // Only load rider markers when showRoute is true (i.e., when 'VIEW ROUTE' button was clicked)
     if (widget.showRoute) {
-      _mapController.plotRandomRiderMarkers('Bike', pickupLatLng);
+      _mapController.plotRandomRiderMarkers(pickupLatLng);
     }
   }
 
@@ -333,6 +333,7 @@ class _MapHomePageState extends State<MapHomePage> {
     String? optionId,
     VoidCallback? onTap,
   }) {
+    print('Building icon for $title assets/icons/$icon.png');
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -355,7 +356,7 @@ class _MapHomePageState extends State<MapHomePage> {
                 height: 40,
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Colors.black.withOpacity(0.1)
+                      ? Colors.black.withOpacity(0.05)
                       : const Color.fromARGB(255, 255, 255, 250),
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -451,7 +452,7 @@ class _MapHomePageState extends State<MapHomePage> {
       height: 50,
       child: ElevatedButton(
         onPressed: () {
-          Navigator.pop(context);
+          // Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Booking $optionTitle...'),
@@ -549,7 +550,6 @@ class _MapHomePageState extends State<MapHomePage> {
                                 'Plotting random rider markers for $vehicleType',
                               );
                               _mapController.plotRandomRiderMarkers(
-                                vehicleType,
                                 LatLng(
                                   widget.pickupLocation?.latitude ?? 0,
                                   widget.pickupLocation?.longitude ?? 0,

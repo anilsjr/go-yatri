@@ -19,7 +19,7 @@ class MapController extends ChangeNotifier {
   late BitmapDescriptor markerIconTaxiAuto;
 
   GoogleMapController? mapController;
-  final String googleApiKey = 'AIzaSyBIJfuTJME0jr6ubJCNuDK9oUEHMWNrzEY';
+  final String googleApiKey = AppConstant.googleApiKey;
   LatLng? currentPosition;
   Set<Marker> markers = {};
   Set<Polyline> polylines = {};
@@ -93,28 +93,28 @@ class MapController extends ChangeNotifier {
   Future<void> _loadMarkerIcons() async {
     final Uint8List greenIconBytes = await _getBytesFromAsset(
       'assets/icons/green_marker.png',
-      100,
+      120,
     );
 
     final Uint8List redIconBytes = await _getBytesFromAsset(
       'assets/icons/red_marker.png',
-      100,
+      120,
     );
 
     // Load the taxi icon with a fixed size
     final Uint8List taxiIconBytes = await _getBytesFromAsset(
       'assets/icons/taxi.png',
-      60,
+      100,
     );
 
     final Uint8List autoRickshawIconBytes = await _getBytesFromAsset(
-      'assets/icons/auto_marker.png',
-      60,
+      'assets/icons/auto_marker_top_view.png',
+      80,
     );
 
     final Uint8List bikeIconBytes = await _getBytesFromAsset(
       'assets/icons/bike_marker.png',
-      60,
+      100,
     );
     markerIconRed = BitmapDescriptor.fromBytes(redIconBytes);
     markerIconGreen = BitmapDescriptor.fromBytes(greenIconBytes);
@@ -578,10 +578,10 @@ class MapController extends ChangeNotifier {
   /// Calculate estimated prices based on distance and vehicle type (optimized)
   Map<String, double> calculateEstimatedPrices(double distanceKm) {
     // Pre-calculated base prices and per-km rates for faster computation
-    const bikeBase = 10.0, bikePerKm = 6.0, bikeMin = 22.0;
-    const autoBase = 20.0, autoPerKm = 12.0, autoMin = 35.0;
-    const carEconomyBase = 40.0, carEconomyPerKm = 15.0, carEconomyMin = 50.0;
-    const carPremiumBase = 60.0, carPremiumPerKm = 20.0, carPremiumMin = 80.0;
+    const bikeBase = 10.0, bikePerKm = 4.0, bikeMin = 22.0;
+    const autoBase = 30.0, autoPerKm = 6.0, autoMin = 35.0;
+    const carEconomyBase = 40.0, carEconomyPerKm = 10.0, carEconomyMin = 50.0;
+    const carPremiumBase = 60.0, carPremiumPerKm = 15.0, carPremiumMin = 80.0;
 
     final bikePrice = (bikeBase + (distanceKm * bikePerKm));
     final autoPrice = (autoBase + (distanceKm * autoPerKm));
@@ -886,7 +886,7 @@ class MapController extends ChangeNotifier {
   List<LatLng> generateRandomRiderMarkers(LatLng userLocation) {
     final random = Random();
     final int count = 5;
-    const double radiusInKm = 1;
+    const double radiusInKm = 3;
     const double earthRadius = 6371.0;
 
     List<LatLng> randomMarkers = [];
@@ -923,10 +923,12 @@ class MapController extends ChangeNotifier {
     return randomMarkers;
   }
 
-  plotRandomRiderMarkers(String s, LatLng pickupLatLng) {
-    debugPrint('Plotting random rider markers for type: $s \n\n\n\n\n\n');
+  plotRandomRiderMarkers(LatLng pickupLatLng) {
+    // debugPrint('Plotting random rider markers for type: $s \n\n\n\n\n\n');
     BitmapDescriptor riderMarkerIcon;
-    switch (s) {
+    Map<String, dynamic>? options = getSelectedTransportOptionDetails();
+    String title = options?['title'] ?? '';
+    switch (title) {
       case 'Cab':
         riderMarkerIcon = markerIconTaxiCar;
         break;
