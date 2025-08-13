@@ -14,42 +14,29 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
           BoxShadow(
             color: Color(0x0A000000), // Very subtle shadow
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: Offset(0, 3),
           ),
         ],
       ),
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 4,
+        top: MediaQuery.of(context).padding.top + 2,
         left: 8,
         right: 8,
-        bottom: 2,
+        bottom: 0,
       ),
       child: Row(
         children: [
           // Modern menu button with container
-          IconButton(
-            icon: const Icon(
-              Icons.menu_rounded,
-              color: Color(0xFF1E293B),
-              size: 22,
+          GestureDetector(
+            onTap: onMenuTap,
+            child: Image.asset(
+              "assets/icons/app_logo.png",
+              height: 60,
+              fit: BoxFit.contain,
             ),
-            onPressed: onMenuTap,
-            padding: const EdgeInsets.all(8),
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           ),
 
           const Spacer(),
-
-          // App title or logo space
-          const Text(
-            'GoYatri',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
-              letterSpacing: -0.5,
-            ),
-          ),
 
           const Spacer(),
 

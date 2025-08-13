@@ -70,6 +70,14 @@ class LocationProvider extends ChangeNotifier {
 
     try {
       _recentLocations = await _repository.getRecentLocations();
+      print(
+        "Recent locations loaded: ===============================>>>>>>>>>>>\n\n\n\n\n\n\n\n\n\\n\n\n\n\n\n",
+      );
+
+      for (var loc in _recentLocations) {
+        print("Recent location: ${loc.name}");
+      }
+
       _areRecentLocationsLoaded = true;
       notifyListeners();
     } catch (e) {

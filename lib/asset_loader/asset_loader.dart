@@ -33,7 +33,7 @@ class AssetLoader {
       precacheImage(const AssetImage("assets/icons/bike_marker.png"), context),
       precacheImage(const AssetImage("assets/icons/green_marker.png"), context),
       precacheImage(const AssetImage("assets/icons/red_marker.png"), context),
-      precacheImage(const AssetImage("assets/icons/splash.png"), context),
+      precacheImage(const AssetImage("assets/icons/app_logo.png"), context),
       precacheImage(const AssetImage("assets/icons/taxi.png"), context),
       precacheImage(const AssetImage("assets/icons/car.png"), context),
       precacheImage(const AssetImage("assets/icons/motorbike.png"), context),

@@ -50,7 +50,14 @@ dependencies:
   uuid: ^4.5.0
   http: ^1.1.0
 
+flutter_native_splash:
+  color: "#ffffff"
+  image: assets/icons/app_logo.png
+  android: true
+  ios: true
+
 dev_dependencies:
+  flutter_native_splash: ^2.0.5
   flutter_test:
     sdk: flutter
 

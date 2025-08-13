@@ -33,7 +33,7 @@ class _SplashPageState extends State<SplashPage> {
       backgroundColor: Color(0xFFC3E4C8),
       body: Center(
         child: Image.asset(
-          'assets/icons/splash.png',
+          'assets/icons/app_logo.png',
           width: 200,
           fit: BoxFit.contain,
         ),
