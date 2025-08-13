@@ -4,7 +4,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:goyatri/asset_loader/asset_loader.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -60,6 +59,24 @@ class MapController extends ChangeNotifier {
 
   List<Map<String, dynamic>> get availableRideOptions => _availableRideOptions;
 
+  /// Format duration consistently across all transportation modes
+  String _formatDuration(double durationMinutes) {
+    final int totalMinutes = durationMinutes.round();
+
+    if (totalMinutes >= 60) {
+      final int hours = totalMinutes ~/ 60;
+      final int remainingMinutes = totalMinutes % 60;
+
+      if (remainingMinutes == 0) {
+        return '$hours hour${hours > 1 ? 's' : ''}';
+      } else {
+        return '$hours hour${hours > 1 ? 's' : ''} $remainingMinutes min${remainingMinutes > 1 ? 's' : ''}';
+      }
+    } else {
+      return '$totalMinutes min${totalMinutes > 1 ? 's' : ''}';
+    }
+  }
+
   /// Get formatted route info for display
   String get routeInfo {
     if (currentRouteDistanceText != null && currentRouteDurationText != null) {
@@ -95,7 +112,7 @@ class MapController extends ChangeNotifier {
     //   context,
     // ).loadString(AppConstant.mapStylePath);
 
-    final mapStyle = AssetLoader().getJson("assets/map/map_style.json");
+    // final mapStyle = AssetLoader().getJson("assets/map/map_style.json");
   }
 
   Future<void> _loadMarkerIcons() async {
@@ -414,7 +431,7 @@ class MapController extends ChangeNotifier {
       'distance_km': straightDistance,
       'distance_text': '${straightDistance.toStringAsFixed(1)} km',
       'duration_minutes': estimatedTime,
-      'duration_text': '${estimatedTime.round()} mins',
+      'duration_text': _formatDuration(estimatedTime),
       'success': false,
       'fallback': true,
     };
@@ -460,7 +477,7 @@ class MapController extends ChangeNotifier {
           'distance_km': distance,
           'distance_text': '${distance.toStringAsFixed(1)} km',
           'duration_minutes': estimatedTime,
-          'duration_text': '${estimatedTime.round()} mins',
+          'duration_text': _formatDuration(estimatedTime),
           'success': false,
           'fallback': true,
         };
@@ -517,7 +534,7 @@ class MapController extends ChangeNotifier {
           'distance_km': carDistance,
           'distance_text': carRoute['distance_text'],
           'duration_minutes': autoDuration,
-          'duration_text': '${autoDuration.round()} mins',
+          'duration_text': _formatDuration(autoDuration),
           'success': true,
           'vehicle_type': 'auto',
         };
@@ -528,7 +545,7 @@ class MapController extends ChangeNotifier {
           'distance_km': carDistance,
           'distance_text': carRoute['distance_text'],
           'duration_minutes': bikeDuration,
-          'duration_text': '${bikeDuration.round()} mins',
+          'duration_text': _formatDuration(bikeDuration),
           'success': true,
           'vehicle_type': 'bike',
         };
@@ -554,11 +571,15 @@ class MapController extends ChangeNotifier {
   ) {
     final distance = calculateStraightLineDistance(start, end);
 
+    final carDuration = distance * 2; // 30 km/h average
+    final bikeDuration = distance * 2.5; // 24 km/h average for bikes in traffic
+    final autoDuration = distance * 2.5; // 24 km/h average
+
     results['car'] = {
       'distance_km': distance,
       'distance_text': '${distance.toStringAsFixed(1)} km',
-      'duration_minutes': distance * 2, // 30 km/h average
-      'duration_text': '${(distance * 2).round()} mins',
+      'duration_minutes': carDuration,
+      'duration_text': _formatDuration(carDuration),
       'success': false,
       'fallback': true,
     };
@@ -566,9 +587,8 @@ class MapController extends ChangeNotifier {
     results['bike'] = {
       'distance_km': distance,
       'distance_text': '${distance.toStringAsFixed(1)} km',
-      'duration_minutes':
-          distance * 2.5, // 24 km/h average for bikes in traffic
-      'duration_text': '${(distance * 2.5).round()} mins',
+      'duration_minutes': bikeDuration,
+      'duration_text': _formatDuration(bikeDuration),
       'success': false,
       'fallback': true,
     };
@@ -576,8 +596,8 @@ class MapController extends ChangeNotifier {
     results['auto'] = {
       'distance_km': distance,
       'distance_text': '${distance.toStringAsFixed(1)} km',
-      'duration_minutes': distance * 2.5, // 24 km/h average
-      'duration_text': '${(distance * 2.5).round()} mins',
+      'duration_minutes': autoDuration,
+      'duration_text': _formatDuration(autoDuration),
       'success': false,
       'fallback': true,
     };
@@ -959,7 +979,7 @@ class MapController extends ChangeNotifier {
           markerId: MarkerId('rider_$i'),
           rotation: Random().nextDouble() * 360,
           position: randomMarkers[i],
-          icon: riderMarkerIcon ?? markerIconBike,
+          icon: riderMarkerIcon,
           // infoWindow: InfoWindow(
           //   title: 'Rider $i',
           //   snippet: 'Random rider location',

@@ -144,16 +144,9 @@ class RideBookingCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.directions_car_rounded, size: 20),
-              SizedBox(width: 8),
-              Text(
-                'Book Ride',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ],
+          child: Text(
+            'Book Ride',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
       ),
@@ -326,19 +319,6 @@ class RideBookingCard extends StatelessWidget {
         const SizedBox(height: 12),
         Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B7280).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(
-                Icons.history_rounded,
-                size: 16,
-                color: Color(0xFF6B7280),
-              ),
-            ),
-            const SizedBox(width: 8),
             const Text(
               'Recent',
               style: TextStyle(
@@ -358,6 +338,10 @@ class RideBookingCard extends StatelessWidget {
   }
 
   Widget _buildRecentLocationTile(location, LocationProvider provider) {
+    if ((location.name == "Current Location") ||
+        (location.address.isEmpty == "Your current location")) {
+      return const SizedBox.shrink(); // Skip empty locations
+    }
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -412,18 +396,6 @@ class RideBookingCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(4),
-                child: Icon(
-                  location.isFavorite
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
-                  size: 16,
-                  color: location.isFavorite
-                      ? const Color(0xFFEF4444)
-                      : const Color(0xFF94A3B8),
                 ),
               ),
             ],

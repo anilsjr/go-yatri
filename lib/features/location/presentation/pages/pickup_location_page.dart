@@ -194,7 +194,7 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
         controller: _searchController,
         focusNode: _searchFocusNode,
         decoration: InputDecoration(
-          hintText: 'Enter pickup location',
+          hintText: 'pickup location',
           prefixIcon: const Icon(Icons.search, color: Colors.green, size: 20),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(

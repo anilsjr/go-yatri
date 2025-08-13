@@ -147,7 +147,7 @@ class _DropLocationPageState extends State<DropLocationPage> {
         controller: _searchController,
         focusNode: _searchFocusNode,
         decoration: InputDecoration(
-          hintText: 'Enter drop location',
+          hintText: 'drop location',
           prefixIcon: const Icon(Icons.search, color: Colors.red, size: 20),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
