@@ -924,12 +924,12 @@ class MapController extends ChangeNotifier {
   }
 
   plotRandomRiderMarkers(LatLng pickupLatLng) {
-    // debugPrint('Plotting random rider markers for type: $s \n\n\n\n\n\n');
     BitmapDescriptor riderMarkerIcon;
     Map<String, dynamic>? options = getSelectedTransportOptionDetails();
-    String title = options?['title'] ?? '';
-    switch (title) {
-      case 'Cab':
+    String s = options?['title'] ?? '';
+    switch (s) {
+      case 'Cab Economy':
+      case 'Cab Premium':
         riderMarkerIcon = markerIconTaxiCar;
         break;
       case 'Auto':
@@ -940,7 +940,7 @@ class MapController extends ChangeNotifier {
         riderMarkerIcon = markerIconBike;
         break;
     }
-
+    debugPrint('s ===>>>>>>> $s');
     final randomMarkers = generateRandomRiderMarkers(pickupLatLng);
 
     for (int i = 0; i < randomMarkers.length; i++) {

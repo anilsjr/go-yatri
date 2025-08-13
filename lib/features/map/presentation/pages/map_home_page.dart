@@ -480,7 +480,7 @@ class _MapHomePageState extends State<MapHomePage> {
   // Cached ride options container - only rebuild when location selection changes
   Widget _buildRideOptionsContainer() {
     return Container(
-      height: 400,
+      height: 380,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),

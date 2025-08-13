@@ -8,61 +8,83 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x0A000000), // Very subtle shadow
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top,
-        left: 16,
-        right: 16,
-        bottom: 8,
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 20,
+        right: 20,
+        bottom: 16,
       ),
       child: Row(
         children: [
-          IconButton(
-            icon: Icon(Icons.menu),
-            onPressed: onMenuTap,
-            padding: EdgeInsets.zero,
-            constraints: BoxConstraints(),
+          // Modern menu button with container
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.menu_rounded,
+                color: Color(0xFF1E293B),
+                size: 22,
+              ),
+              onPressed: onMenuTap,
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            ),
           ),
-          // Expanded(
-          //   child: GestureDetector(
-          //     onTap: () {
-          //       // Navigate to the location selection screen when tapped
-          //       Navigator.push(
-          //         context,
-          //         MaterialPageRoute(
-          //           builder: (context) => ChangeNotifierProvider(
-          //             create: (context) => LocationProvider(),
-          //             // child: LocationSelectionScreen(),
-          //             child: (),
-          //           ),
-          //         ),
-          //       );
-          //     },
-          //     child: Container(
-          //       decoration: BoxDecoration(
-          //         color: Colors.grey[200],
-          //         borderRadius: BorderRadius.circular(30),
-          //       ),
-          //       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          //       child: Row(
-          //         children: [
-          //           Icon(Icons.search, color: Colors.grey[600]),
-          //           SizedBox(width: 8),
-          //           Text(
-          //             'Where are you going?',
-          //             style: TextStyle(color: Colors.grey[600], fontSize: 16),
-          //           ),
-          //         ],
-          //       ),
-          //     ),
-          //   ),
-          // ),
-          // SizedBox(width: 8),
+
+          const Spacer(),
+
+          // App title or logo space
+          const Text(
+            'GoYatri',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+              letterSpacing: -0.5,
+            ),
+          ),
+
+          const Spacer(),
+
+          // Profile/notification button
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.notifications_outlined,
+                color: Color(0xFF1E293B),
+                size: 22,
+              ),
+              onPressed: () {
+                // Handle notifications
+              },
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            ),
+          ),
         ],
       ),
     );
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(kToolbarHeight + 8);
+  Size get preferredSize => const Size.fromHeight(76);
 }
