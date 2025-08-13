@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get/get.dart';
+import 'package:goyatri/routes/routes.dart';
+import 'package:goyatri/features/auth-firebase/presentaion/controller/logout_controller.dart';
 
 class MenuPage extends StatelessWidget {
   const MenuPage({super.key});
@@ -206,6 +209,7 @@ class MenuPage extends StatelessWidget {
             _buildMenuItem(Icons.monetization_on_outlined, 'Rapido Coins'),
             _buildDivider(),
             _buildMenuItem(Icons.notifications_outlined, 'Notifications'),
+            _buildLogoutBtnItem(context, Icons.logout, 'Logout'),
           ],
         ),
       ),
@@ -234,6 +238,44 @@ class MenuPage extends StatelessWidget {
           ),
           Icon(Icons.arrow_forward_ios, size: 16.0),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLogoutBtnItem(BuildContext ctx, IconData icon, String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+      child: GestureDetector(
+        onTap: () async {
+          print('Logout button tapped');
+          LogoutController logoutController = LogoutController();
+          Future<bool> shouldLogout = logoutController.showLogoutConfirmation(
+            ctx,
+          );
+          if (await shouldLogout) {
+            logoutController.logout();
+          }
+        },
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10.0),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Icon(icon, color: Colors.grey[700]),
+            ),
+            SizedBox(width: 16.0),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, size: 16.0),
+          ],
+        ),
       ),
     );
   }

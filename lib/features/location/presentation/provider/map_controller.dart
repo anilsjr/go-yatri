@@ -52,7 +52,7 @@ class MapController extends ChangeNotifier {
 
   // Getters for transportation options
   String get selectedTransportOption => _selectedTransportOption;
-  set selectedTransportOption(String value) {
+  void selecteTransportOption(String value) {
     _selectedTransportOption = value;
     notifyListeners();
   }

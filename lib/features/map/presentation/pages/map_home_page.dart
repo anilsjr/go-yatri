@@ -340,8 +340,8 @@ class _MapHomePageState extends State<MapHomePage> {
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           border: Border.all(
-            color: isSelected ? Colors.black : Colors.grey[300]!,
-            width: isSelected ? 2 : 1,
+            color: isSelected ? Colors.black : Colors.transparent,
+            width: isSelected ? 1 : 0,
           ),
           borderRadius: BorderRadius.circular(12),
           color: isSelected ? Colors.black.withOpacity(0.05) : Colors.white,
@@ -354,17 +354,12 @@ class _MapHomePageState extends State<MapHomePage> {
               Container(
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? Colors.black.withOpacity(0.05)
-                      : const Color.fromARGB(255, 255, 255, 250),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+
                 child: Center(
                   child: Image.asset(
                     'assets/icons/$icon.png',
-                    width: isSelected ? 30 : 26,
-                    height: isSelected ? 30 : 26,
+                    width: isSelected ? 35 : 26,
+                    height: isSelected ? 35 : 26,
                   ),
                 ),
               ),
@@ -430,7 +425,7 @@ class _MapHomePageState extends State<MapHomePage> {
               Text(
                 price,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 15,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -447,9 +442,19 @@ class _MapHomePageState extends State<MapHomePage> {
     final selectedOption = mapController.getSelectedTransportOptionDetails();
     final optionTitle = selectedOption?['title'] ?? 'Cab Economy';
 
-    return SizedBox(
-      width: double.infinity - 50,
-      height: 50,
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: Colors.grey[300]!, width: 2),
+          left: BorderSide.none,
+          right: BorderSide.none,
+          bottom: BorderSide.none,
+        ),
+      ),
+      width: MediaQuery.of(context).size.width,
+      padding: const EdgeInsets.only(top: 10, bottom: 10, left: 20, right: 20),
+
+      height: 60,
       child: ElevatedButton(
         onPressed: () {
           // Navigator.pop(context);
@@ -480,7 +485,7 @@ class _MapHomePageState extends State<MapHomePage> {
   // Cached ride options container - only rebuild when location selection changes
   Widget _buildRideOptionsContainer() {
     return Container(
-      height: 380,
+      height: 350,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -488,94 +493,79 @@ class _MapHomePageState extends State<MapHomePage> {
           BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 2),
         ],
       ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Ride options - Only rebuild when transport selection changes
-            Selector<MapController, String>(
-              selector: (context, mapController) =>
-                  mapController.selectedTransportOption,
-              builder: (context, selectedTransportOption, child) {
-                return FutureBuilder<List<Map<String, dynamic>>>(
-                  future: _getCachedRideOptions(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      );
-                    }
+      child: Column(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Ride options - Only rebuild when transport selection changes
+                Selector<MapController, String>(
+                  selector: (context, mapController) =>
+                      mapController.selectedTransportOption,
+                  builder: (context, selectedTransportOption, child) {
+                    return FutureBuilder<List<Map<String, dynamic>>>(
+                      future: _getCachedRideOptions(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
 
-                    final rideOptions =
-                        snapshot.data ?? _getDefaultRideOptions();
+                        final rideOptions =
+                            snapshot.data ?? _getDefaultRideOptions();
 
-                    return Column(
-                      children: rideOptions.map((option) {
-                        return _buildRideOption(
-                          icon: option['icon'],
-                          title: option['title'],
-                          subtitle: option['subtitle'],
-                          price: option['price'],
-                          isSelected: option['isSelected'] ?? false,
-                          badge: option['badge'],
-                          fastestBadge: option['fastestBadge'] ?? false,
-                          optionId: option['id'],
-                          onTap: () {
-                            if (option['id'] != null) {
-                              _mapController.selectTransportOption(
-                                option['id'],
-                              );
+                        return Column(
+                          children: rideOptions.map((option) {
+                            return _buildRideOption(
+                              icon: option['icon'],
+                              title: option['title'],
+                              subtitle: option['subtitle'],
+                              price: option['price'],
+                              isSelected: option['isSelected'] ?? false,
+                              badge: option['badge'],
+                              fastestBadge: option['fastestBadge'] ?? false,
+                              optionId: option['id'],
+                              onTap: () {
+                                if (option['id'] != null) {
+                                  _mapController.selectTransportOption(
+                                    option['id'],
+                                  );
 
-                              // Map option IDs to appropriate marker types
-                              String vehicleType;
-                              switch (option['id']) {
-                                case 'car_economy':
-                                case 'car_premium':
-                                  vehicleType = 'Cab';
-                                  break;
-                                case 'auto':
-                                  vehicleType = 'Auto';
-                                  break;
-                                case 'bike':
-                                default:
-                                  vehicleType = 'Bike';
-                                  break;
-                              }
-
-                              print(
-                                'Plotting random rider markers for $vehicleType',
-                              );
-                              _mapController.plotRandomRiderMarkers(
-                                LatLng(
-                                  widget.pickupLocation?.latitude ?? 0,
-                                  widget.pickupLocation?.longitude ?? 0,
-                                ),
-                              );
-                            }
-                          },
+                                  _mapController.plotRandomRiderMarkers(
+                                    LatLng(
+                                      widget.pickupLocation?.latitude ?? 0,
+                                      widget.pickupLocation?.longitude ?? 0,
+                                    ),
+                                  );
+                                }
+                              },
+                            );
+                          }).toList(),
                         );
-                      }).toList(),
+                      },
                     );
                   },
-                );
-              },
+                ),
+              ],
             ),
-
-            // Book button
-            const SizedBox(height: 16),
-            Selector<MapController, String>(
-              selector: (context, mapController) =>
-                  mapController.selectedTransportOption,
-              builder: (context, selectedTransportOption, child) {
-                return _buildBookButton();
-              },
-            ),
-          ],
-        ),
+          ),
+          // Book button
+          // const SizedBox(height: 8),
+          Selector<MapController, String>(
+            selector: (context, mapController) =>
+                mapController.selectedTransportOption,
+            builder: (context, selectedTransportOption, child) {
+              return _buildBookButton();
+            },
+          ),
+        ],
       ),
     );
   }

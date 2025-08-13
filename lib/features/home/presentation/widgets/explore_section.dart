@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:goyatri/features/home/presentation/widgets/ride_booking_card.dart';
+import 'package:get/get.dart';
+import 'package:provider/provider.dart';
 import 'package:goyatri/features/location/presentation/provider/map_controller.dart';
+import 'package:goyatri/features/location/presentation/provider/location_provider.dart';
+import 'package:goyatri/features/location/presentation/pages/pickup_location_page.dart';
+import 'package:goyatri/features/home/presentation/widgets/ride_booking_card.dart';
 
 class ExploreSection extends StatelessWidget {
   const ExploreSection({super.key});
@@ -13,7 +17,7 @@ class ExploreSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Ride Booking Card - New UI Component
-        // const RideBookingCard(),
+        const RideBookingCard(),
         const SizedBox(height: 24),
 
         // Explore header with modern styling
@@ -45,7 +49,8 @@ class ExploreSection extends StatelessWidget {
                   color: const Color(0xFF10B981),
                   textFontSize: 12,
                   onTap: () {
-                    // Handle Auto tap
+                    // Navigate to pickup location selection for Auto
+                    _navigateToPickupSelection(context, 'auto');
                   },
                 ),
               ),
@@ -58,7 +63,8 @@ class ExploreSection extends StatelessWidget {
                   color: const Color(0xFF3B82F6),
                   textFontSize: 12,
                   onTap: () {
-                    // Handle Cab tap
+                    // Navigate to pickup location selection for Cab
+                    _navigateToPickupSelection(context, 'car_economy');
                   },
                 ),
               ),
@@ -71,7 +77,9 @@ class ExploreSection extends StatelessWidget {
                   color: const Color(0xFFEF4444),
                   textFontSize: 12,
                   onTap: () {
-                    _mapController.selectedTransportOption = 'Bike';
+                    // Navigate to pickup location selection for Bike
+                    _navigateToPickupSelection(context, 'bike');
+                    _mapController.selecteTransportOption('bike');
                   },
                 ),
               ),
@@ -81,6 +89,30 @@ class ExploreSection extends StatelessWidget {
 
         const SizedBox(height: 24),
       ],
+    );
+  }
+
+  void _navigateToPickupSelection(BuildContext context, String transportType) {
+    // Get the location provider
+    final locationProvider = Provider.of<LocationProvider>(
+      context,
+      listen: false,
+    );
+
+    // Switch to pickup mode
+    locationProvider.switchMode(LocationMode.pickup);
+
+    // Store the selected transport type for later use
+    // You might want to store this in a shared state or pass it along
+
+    // Navigate to pickup location page using GetX
+    Get.to(
+      () => ChangeNotifierProvider.value(
+        value: locationProvider,
+        child: const PickupLocationPage(),
+      ),
+      transition: Transition.rightToLeft,
+      duration: const Duration(milliseconds: 300),
     );
   }
 }
@@ -160,8 +192,6 @@ class _ExploreItem extends StatelessWidget {
             ),
 
             const SizedBox(height: 8),
-
-            //
           ],
         ),
       ),
