@@ -4,14 +4,19 @@ import 'package:goyatri/features/auth-firebase/presentaion/pages/signup_page.dar
 import 'package:goyatri/features/home/presentation/pages/new_home_page.dart';
 import 'package:goyatri/features/home/presentation/pages/menu_page.dart';
 import 'package:goyatri/features/map/presentation/pages/map_home_page.dart';
+import 'package:goyatri/features/splash/presentation/pages/splash_page.dart';
+import 'package:goyatri/wrapper/wrapper.dart';
 
 class AppRoutes {
   static const String home = '/home';
+  static const String auth = '/auth';
+
   static const String newHome = '/new-home';
   static const String login = '/login';
   static const String signup = '/signup';
   static const String mappage = '/mapHome';
   static const String menu = '/menu';
+  static const String splash = '/splash';
 
   static final routes = [
     GetPage(name: home, page: () => NewHomePage()),
@@ -31,5 +36,7 @@ class AppRoutes {
     GetPage(name: login, page: () => LoginPage()),
     GetPage(name: signup, page: () => SignupPage()),
     GetPage(name: menu, page: () => MenuPage()),
+    GetPage(name: splash, page: () => SplashPage()),
+    GetPage(name: auth, page: () => AuthWrapper()),
   ];
 }

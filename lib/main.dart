@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
+import 'package:goyatri/features/splash/presentation/pages/splash_page.dart';
 import 'package:goyatri/routes/routes.dart';
 import 'package:goyatri/features/auth-firebase/presentaion/pages/login_page.dart';
 import 'package:goyatri/features/home/presentation/pages/new_home_page.dart';
@@ -52,31 +53,8 @@ class MyApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'GoYatri',
-      home: SafeArea(child: AuthWrapper()),
+      home: const SplashPage(),
       getPages: AppRoutes.routes,
-    );
-  }
-}
-
-class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(body: Center(child: CircularProgressIndicator()));
-        }
-        if (snapshot.hasData) {
-          // User is signed in
-          return NewHomePage();
-        } else {
-          // User is not signed in
-          return LoginPage();
-        }
-      },
     );
   }
 }
