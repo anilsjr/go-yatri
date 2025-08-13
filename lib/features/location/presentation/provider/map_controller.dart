@@ -52,6 +52,11 @@ class MapController extends ChangeNotifier {
 
   // Getters for transportation options
   String get selectedTransportOption => _selectedTransportOption;
+  set selectedTransportOption(String value) {
+    _selectedTransportOption = value;
+    notifyListeners();
+  }
+
   List<Map<String, dynamic>> get availableRideOptions => _availableRideOptions;
 
   /// Get formatted route info for display
