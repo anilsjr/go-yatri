@@ -19,7 +19,7 @@ class _LoginPageState extends State<LoginPage> {
     required String label,
     required IconData icon,
     String? hint,
-    int length = 10,
+    int? length,
 
     TextInputType? keyboardType,
 
@@ -248,6 +248,9 @@ class _LoginPageState extends State<LoginPage> {
                                 }
                                 loginController.phone =
                                     '+91${_phoneController.text}';
+                                print(
+                                  'Sending OTP to: ${loginController.phone}',
+                                );
                                 loginController.sendOtp();
                               } else {
                                 if (_otpController.text.isEmpty) {

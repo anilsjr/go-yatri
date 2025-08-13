@@ -19,7 +19,7 @@ class _SignupPageState extends State<SignupPage> {
     required TextEditingController controller,
     required String label,
     required IconData icon,
-    int length = 10,
+    int? length = 50,
     String? hint,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
@@ -27,7 +27,7 @@ class _SignupPageState extends State<SignupPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       child: TextFormField(
-        maxLength: length,
+        maxLength: length!,
         controller: controller,
         keyboardType: keyboardType,
         validator: validator,
@@ -219,6 +219,7 @@ class _SignupPageState extends State<SignupPage> {
                     children: [
                       _buildTextField(
                         controller: _nameController,
+                        length: 50,
                         label: 'Full Name',
                         icon: Icons.person_outline,
                         validator: (value) {
@@ -232,6 +233,7 @@ class _SignupPageState extends State<SignupPage> {
                         },
                       ),
                       _buildTextField(
+                        length: 50,
                         controller: _emailController,
                         label: 'Email Address',
                         icon: Icons.email_outlined,
@@ -248,6 +250,7 @@ class _SignupPageState extends State<SignupPage> {
                         },
                       ),
                       _buildTextField(
+                        length: 10,
                         controller: _phoneController,
                         label: 'Phone Number',
                         icon: Icons.phone_outlined,

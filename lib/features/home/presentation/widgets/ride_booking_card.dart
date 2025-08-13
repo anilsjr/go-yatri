@@ -188,22 +188,23 @@ class RideBookingCard extends StatelessWidget {
 
           // Modern connecting line
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
+            margin: const EdgeInsets.symmetric(horizontal: 18),
             child: Row(
               children: [
-                const SizedBox(width: 20),
-                Container(
-                  width: 2,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0xFF10B981), Color(0xFFEF4444)],
+                // const SizedBox(width: 20),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      "assets/icons/arrow.png",
+                      height: 40,
+                      width: 20,
+                      fit: BoxFit.contain,
                     ),
-                    borderRadius: BorderRadius.circular(1),
-                  ),
+                  ],
                 ),
+
                 const SizedBox(width: 16),
                 Expanded(
                   child: Container(
@@ -266,7 +267,7 @@ class RideBookingCard extends StatelessWidget {
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         child: Row(
           children: [
             icon,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:goyatri/features/home/presentation/widgets/home_app_bar.dart';
 import 'package:goyatri/features/home/presentation/widgets/explore_section.dart';
 import 'package:get/get.dart';
@@ -14,6 +15,12 @@ class NewHomePage extends StatefulWidget {
 
 class _NewHomePageState extends State<NewHomePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLocationPermission();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +81,22 @@ class _NewHomePageState extends State<NewHomePage> {
         ),
       ),
     );
+  }
+
+  void _checkLocationPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw Exception('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception(
+        'Location permissions are permanently denied, we cannot request permissions.',
+      );
+    }
   }
 
   Widget _buildWelcomeSection() {
