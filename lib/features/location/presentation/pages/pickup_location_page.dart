@@ -99,21 +99,9 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
             children: [
               _buildCurrentLocationItem(),
               _buildSearchBar(),
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: 16.0,
-                  top: 16.0,
-                  bottom: 8.0,
-                ),
-                child: Text(
-                  'RECENT LOCATIONS',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+              const Divider(
+                thickness: 1,
+                color: Color.fromARGB(255, 228, 228, 228),
               ),
               // Use Selector for the list to avoid unnecessary rebuilds
               Expanded(
@@ -132,9 +120,10 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
                     provider.selectedPickupLocation != null &&
                     provider.selectedDropLocation != null,
                 builder: (context, showButton, child) {
-                  return showButton
-                      ? _buildViewRouteButton(context)
-                      : const SizedBox.shrink();
+                  return
+                  // showButton
+                  // ? _buildViewRouteButton(context)
+                  const SizedBox.shrink();
                 },
               ),
             ],
@@ -260,6 +249,10 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
   }
 
   Widget _buildLocationTile(location) {
+    if ((location.name.toLowerCase().contains("current location")) ||
+        (location.address.toLowerCase().contains("your current location"))) {
+      return const SizedBox.shrink(); // Skip empty locations
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: InkWell(
@@ -309,39 +302,39 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
     );
   }
 
-  Widget _buildViewRouteButton(BuildContext context) {
-    return Consumer<LocationProvider>(
-      builder: (context, provider, child) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ElevatedButton(
-            onPressed: () {
-              // Navigate to map view with pickup and drop locations
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MapHomePage(
-                    pickupLocation: provider.selectedPickupLocation,
-                    dropLocation: provider.selectedDropLocation,
-                  ),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
-            ),
-            child: const Text(
-              'VIEW ROUTE',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // Widget _buildViewRouteButton(BuildContext context) {
+  //   return Consumer<LocationProvider>(
+  //     builder: (context, provider, child) {
+  //       return Padding(
+  //         padding: const EdgeInsets.all(16.0),
+  //         child: ElevatedButton(
+  //           onPressed: () {
+  //             // Navigate to map view with pickup and drop locations
+  //             Navigator.push(
+  //               context,
+  //               MaterialPageRoute(
+  //                 builder: (context) => MapHomePage(
+  //                   pickupLocation: provider.selectedPickupLocation,
+  //                   dropLocation: provider.selectedDropLocation,
+  //                 ),
+  //               ),
+  //             );
+  //           },
+  //           style: ElevatedButton.styleFrom(
+  //             backgroundColor: Colors.green,
+  //             foregroundColor: Colors.white,
+  //             minimumSize: const Size(double.infinity, 50),
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(25),
+  //             ),
+  //           ),
+  //           child: const Text(
+  //             'VIEW ROUTE',
+  //             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 }

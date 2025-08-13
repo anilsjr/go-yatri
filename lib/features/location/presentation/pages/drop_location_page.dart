@@ -96,6 +96,7 @@ class _DropLocationPageState extends State<DropLocationPage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildCurrentLocationItem(),
               _buildSearchBar(),
               Padding(
                 padding: const EdgeInsets.only(
@@ -128,9 +129,10 @@ class _DropLocationPageState extends State<DropLocationPage> {
                     provider.selectedPickupLocation != null &&
                     provider.selectedDropLocation != null,
                 builder: (context, showButton, child) {
-                  return showButton
-                      ? _buildViewRouteButton(context)
-                      : const SizedBox.shrink();
+                  return
+                  // showButton
+                  // ? _buildViewRouteButton(context)
+                  const SizedBox.shrink();
                 },
               ),
             ],
@@ -212,7 +214,54 @@ class _DropLocationPageState extends State<DropLocationPage> {
     );
   }
 
+  Widget _buildCurrentLocationItem() {
+    return InkWell(
+      onTap: () {
+        context.read<LocationProvider>().selectCurrentLocation();
+        Navigator.pop(context); // Return to home screen
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.red.withOpacity(0.1),
+              ),
+              child: const Center(
+                child: Icon(Icons.my_location, color: Colors.red, size: 20),
+              ),
+            ),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Current Location',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  Text(
+                    'Using GPS',
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildLocationTile(location) {
+    if ((location.name.toLowerCase().contains("current location")) ||
+        (location.address.toLowerCase().contains("your current location"))) {
+      return const SizedBox.shrink(); // Skip empty locations
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: InkWell(
@@ -262,39 +311,39 @@ class _DropLocationPageState extends State<DropLocationPage> {
     );
   }
 
-  Widget _buildViewRouteButton(BuildContext context) {
-    return Consumer<LocationProvider>(
-      builder: (context, provider, child) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: ElevatedButton(
-            onPressed: () {
-              // Navigate to map view with pickup and drop locations
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MapHomePage(
-                    pickupLocation: provider.selectedPickupLocation,
-                    dropLocation: provider.selectedDropLocation,
-                  ),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
-            ),
-            child: const Text(
-              'VIEW ROUTE',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // Widget _buildViewRouteButton(BuildContext context) {
+  //   return Consumer<LocationProvider>(
+  //     builder: (context, provider, child) {
+  //       return Padding(
+  //         padding: const EdgeInsets.all(16.0),
+  //         child: ElevatedButton(
+  //           onPressed: () {
+  //             // Navigate to map view with pickup and drop locations
+  //             Navigator.push(
+  //               context,
+  //               MaterialPageRoute(
+  //                 builder: (context) => MapHomePage(
+  //                   pickupLocation: provider.selectedPickupLocation,
+  //                   dropLocation: provider.selectedDropLocation,
+  //                 ),
+  //               ),
+  //             );
+  //           },
+  //           style: ElevatedButton.styleFrom(
+  //             backgroundColor: Colors.red,
+  //             foregroundColor: Colors.white,
+  //             minimumSize: const Size(double.infinity, 50),
+  //             shape: RoundedRectangleBorder(
+  //               borderRadius: BorderRadius.circular(25),
+  //             ),
+  //           ),
+  //           child: const Text(
+  //             'VIEW ROUTE',
+  //             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 }

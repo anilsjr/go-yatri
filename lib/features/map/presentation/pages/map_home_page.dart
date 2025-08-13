@@ -452,7 +452,7 @@ class _MapHomePageState extends State<MapHomePage> {
         ),
       ),
       width: MediaQuery.of(context).size.width,
-      padding: const EdgeInsets.only(top: 10, bottom: 10, left: 20, right: 20),
+      padding: const EdgeInsets.only(top: 5, bottom: 5, left: 20, right: 20),
 
       height: 60,
       child: ElevatedButton(
