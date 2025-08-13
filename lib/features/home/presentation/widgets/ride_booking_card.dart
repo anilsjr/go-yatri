@@ -311,7 +311,7 @@ class RideBookingCard extends StatelessWidget {
     }
 
     // Get up to 3 recent locations
-    final recentLocations = provider.recentLocations.take(3).toList();
+    final recentLocations = provider.recentLocations.take(5).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,8 +338,8 @@ class RideBookingCard extends StatelessWidget {
   }
 
   Widget _buildRecentLocationTile(location, LocationProvider provider) {
-    if ((location.name == "Current Location") ||
-        (location.address.isEmpty == "Your current location")) {
+    if ((location.name.toLowerCase().contains("current location")) ||
+        (location.address.toLowerCase().contains("your current location"))) {
       return const SizedBox.shrink(); // Skip empty locations
     }
     return Container(
