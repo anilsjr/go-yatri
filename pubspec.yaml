@@ -51,6 +51,8 @@ dependencies:
   http: ^1.1.0
   icons_launcher: ^3.0.1
   geocoding: ^4.0.0
+  firebase_messaging: ^16.0.0
+  flutter_local_notifications: ^19.4.0
 
 icons_launcher:
   image_path: assets/icons/app_icon.png

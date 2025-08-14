@@ -1,5 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:get/get.dart';
+import 'package:goyatri/features/location/data/models/location_model.dart';
+import 'package:goyatri/routes/routes.dart';
 import 'package:provider/provider.dart';
 import '../provider/location_provider.dart';
 import '../../../map/presentation/pages/map_home_page.dart';
@@ -120,10 +124,8 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
                     provider.selectedPickupLocation != null &&
                     provider.selectedDropLocation != null,
                 builder: (context, showButton, child) {
-                  return
-                  // showButton
-                  // ? _buildViewRouteButton(context)
-                  const SizedBox.shrink();
+                  return _buildSelectOnMapButton(context);
+                  // : const SizedBox.shrink();
                 },
               ),
             ],
@@ -135,7 +137,12 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
 
   Widget _buildCurrentLocationItem() {
     return InkWell(
-      onTap: () {
+      onTap: () async {
+        LocationPermission permission = await Geolocator.checkPermission();
+        while (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+
         context.read<LocationProvider>().selectCurrentLocation();
         Navigator.pop(context); // Return to home screen
       },
@@ -302,39 +309,35 @@ class _PickupLocationPageState extends State<PickupLocationPage> {
     );
   }
 
-  // Widget _buildViewRouteButton(BuildContext context) {
-  //   return Consumer<LocationProvider>(
-  //     builder: (context, provider, child) {
-  //       return Padding(
-  //         padding: const EdgeInsets.all(16.0),
-  //         child: ElevatedButton(
-  //           onPressed: () {
-  //             // Navigate to map view with pickup and drop locations
-  //             Navigator.push(
-  //               context,
-  //               MaterialPageRoute(
-  //                 builder: (context) => MapHomePage(
-  //                   pickupLocation: provider.selectedPickupLocation,
-  //                   dropLocation: provider.selectedDropLocation,
-  //                 ),
-  //               ),
-  //             );
-  //           },
-  //           style: ElevatedButton.styleFrom(
-  //             backgroundColor: Colors.green,
-  //             foregroundColor: Colors.white,
-  //             minimumSize: const Size(double.infinity, 50),
-  //             shape: RoundedRectangleBorder(
-  //               borderRadius: BorderRadius.circular(25),
-  //             ),
-  //           ),
-  //           child: const Text(
-  //             'VIEW ROUTE',
-  //             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-  //           ),
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
+  Widget _buildSelectOnMapButton(BuildContext context) {
+    return Consumer<LocationProvider>(
+      builder: (context, provider, child) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton(
+            onPressed: () {
+              // Navigate to map view with pickup and drop locations
+              Get.toNamed(
+                AppRoutes.selectLocation,
+
+                arguments: {'isPickup': true},
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+            ),
+            child: const Text(
+              'SELECT ON MAP',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

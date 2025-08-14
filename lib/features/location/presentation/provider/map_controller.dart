@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:goyatri/asset_loader/asset_loader.dart';
 import 'package:goyatri/core/util/app_constant.dart' show AppConstant;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
@@ -112,7 +113,7 @@ class MapController extends ChangeNotifier {
     //   context,
     // ).loadString(AppConstant.mapStylePath);
 
-    // final mapStyle = AssetLoader().getJson("assets/map/map_style.json");
+    mapStyle = AssetLoader().getJson("assets/map/map_style.json");
   }
 
   Future<void> _loadMarkerIcons() async {
@@ -236,7 +237,7 @@ class MapController extends ChangeNotifier {
   void onMapCreated(GoogleMapController controller) {
     mapController = controller;
     if (mapStyle != null) {
-      mapController!.setMapStyle(mapStyle);
+      // mapController?.setMapStyle(mapStyle);
     }
 
     // We'll handle markers in getCurrentLocation, no need to add here

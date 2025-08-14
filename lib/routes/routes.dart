@@ -3,6 +3,7 @@ import 'package:goyatri/features/auth-firebase/presentaion/pages/login_page.dart
 import 'package:goyatri/features/auth-firebase/presentaion/pages/signup_page.dart';
 import 'package:goyatri/features/home/presentation/pages/new_home_page.dart';
 import 'package:goyatri/features/home/presentation/pages/menu_page.dart';
+import 'package:goyatri/features/location/presentation/pages/select_location_page.dart';
 import 'package:goyatri/features/map/presentation/pages/map_home_page.dart';
 import 'package:goyatri/features/splash/presentation/pages/splash_page.dart';
 import 'package:goyatri/wrapper/wrapper.dart';
@@ -10,6 +11,7 @@ import 'package:goyatri/wrapper/wrapper.dart';
 class AppRoutes {
   static const String home = '/home';
   static const String auth = '/auth';
+  static const String selectLocation = '/select-location';
 
   static const String newHome = '/new-home';
   static const String login = '/login';
@@ -38,5 +40,12 @@ class AppRoutes {
     GetPage(name: menu, page: () => MenuPage()),
     GetPage(name: splash, page: () => SplashPage()),
     GetPage(name: auth, page: () => AuthWrapper()),
+    GetPage(
+      name: selectLocation,
+      page: () {
+        final args = Get.arguments as Map<String, dynamic>?;
+        return SelectLocationPage(isPickup: args?['isPickup'] ?? true);
+      },
+    ),
   ];
 }
