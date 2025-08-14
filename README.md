@@ -1,6 +1,6 @@
 # Goyatri
 
-Goyatri is a cross-platform Flutter application for transportation selection and location management, built with a clean architecture. It supports Android, iOS, Web, Windows, Linux, and macOS platforms.
+Goyatri is a cross-platform Flutter application for transportation selection and location management, built with a clean architecture. It supports both Android and iOS.
 
 ## Features
 
