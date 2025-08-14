@@ -12,6 +12,7 @@ import 'package:goyatri/features/auth-firebase/presentaion/controller/login_cont
 import 'package:goyatri/features/auth-firebase/presentaion/controller/logout_controller.dart';
 import 'package:goyatri/features/location/presentation/provider/map_controller.dart';
 import 'package:goyatri/features/location/presentation/provider/location_provider.dart';
+import 'package:goyatri/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,7 @@ void main() async {
   ]);
 
   await Firebase.initializeApp();
+  await NotificationService.init();
 
   runApp(
     MultiProvider(

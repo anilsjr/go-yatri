@@ -1,377 +1,605 @@
-// Copyright 2019 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-import 'dart:async';
-import 'dart:convert';
-
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:http/http.dart' as http;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:goyatri/services/notification_service.dart';
+import 'package:provider/provider.dart';
+import 'package:goyatri/features/location/data/models/location_model.dart';
+import 'package:goyatri/features/location/presentation/provider/map_controller.dart';
 
-import 'firebase_options.dart';
-import 'message.dart';
-import 'message_list.dart';
-import 'permissions.dart';
-import 'token_monitor.dart';
+class MapHomePage extends StatefulWidget {
+  final LocationModel? pickupLocation;
+  final LocationModel? dropLocation;
+  final bool isPickupSelection;
+  final bool showRoute;
+  final LatLng? initialLocation;
 
-/// Working example of FirebaseMessaging.
-/// Please use this in order to verify messages are working in foreground, background & terminated state.
-/// Setup your app following this guide:
-/// https://firebase.google.com/docs/cloud-messaging/flutter/client#platform-specific_setup_and_requirements):
-///
-/// Once you've completed platform specific requirements, follow these instructions:
-/// 1. Install melos tool by running `flutter pub global activate melos`.
-/// 2. Run `melos bootstrap` in FlutterFire project.
-/// 3. In your terminal, root to ./packages/firebase_messaging/firebase_messaging/example directory.
-/// 4. Run `flutterfire configure` in the example/ directory to setup your app with your Firebase project.
-/// 5. Open `token_monitor.dart` and change `vapidKey` to yours.
-/// 6. Run the app on an actual device for iOS, android is fine to run on an emulator.
-/// 7. Use the following script to send a message to your device: scripts/send-message.js. To run this script,
-///    you will need nodejs installed on your computer. Then the following:
-///     a. Download a service account key (JSON file) from your Firebase console, rename it to "google-services.json" and add to the example/scripts directory.
-///     b. Ensure your device/emulator is running, and run the FirebaseMessaging example app using `flutter run`.
-///     c. Copy the token that is printed in the console and paste it here: https://github.com/firebase/flutterfire/blob/01b4d357e1/packages/firebase_messaging/firebase_messaging/example/lib/main.dart#L32
-///     c. From your terminal, root to example/scripts directory & run `npm install`.
-///     d. Run `npm run send-message` in the example/scripts directory and your app will receive messages in any state; foreground, background, terminated.
-///  Note: Flutter API documentation for receiving messages: https://firebase.google.com/docs/cloud-messaging/flutter/receive
-///  Note: If you find your messages have stopped arriving, it is extremely likely they are being throttled by the platform. iOS in particular
-///  are aggressive with their throttling policy.
-///
-/// To verify that your messages are being received, you ought to see a notification appearon your device/emulator via the flutter_local_notifications plugin.
-/// Define a top-level named handler which background/terminated messages will
-/// call. Be sure to annotate the handler with `@pragma('vm:entry-point')` above the function declaration.
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await setupFlutterNotifications();
-  showFlutterNotification(message);
-  // If you're going to use other Firebase services in the background, such as Firestore,
-  // make sure you call `initializeApp` before using other Firebase services.
-  print('Handling a background message ${message.messageId}');
-}
-
-/// Create a [AndroidNotificationChannel] for heads up notifications
-late AndroidNotificationChannel channel;
-
-bool isFlutterLocalNotificationsInitialized = false;
-
-Future<void> setupFlutterNotifications() async {
-  if (isFlutterLocalNotificationsInitialized) {
-    return;
-  }
-  channel = const AndroidNotificationChannel(
-    'high_importance_channel', // id
-    'High Importance Notifications', // title
-    description:
-        'This channel is used for important notifications.', // description
-    importance: Importance.high,
-  );
-
-  flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-
-  /// Create an Android Notification Channel.
-  ///
-  /// We use this channel in the `AndroidManifest.xml` file to override the
-  /// default FCM channel to enable heads up notifications.
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin
-      >()
-      ?.createNotificationChannel(channel);
-
-  /// Update the iOS foreground notification presentation options to allow
-  /// heads up notifications.
-  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-  isFlutterLocalNotificationsInitialized = true;
-}
-
-void showFlutterNotification(RemoteMessage message) {
-  RemoteNotification? notification = message.notification;
-  AndroidNotification? android = message.notification?.android;
-  if (notification != null && android != null && !kIsWeb) {
-    flutterLocalNotificationsPlugin.show(
-      notification.hashCode,
-      notification.title,
-      notification.body,
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          channel.id,
-          channel.name,
-          channelDescription: channel.description,
-          // TODO add a proper drawable resource to android, for now using
-          //      one that already exists in example app.
-          icon: 'launch_background',
-        ),
-      ),
-    );
-  }
-}
-
-/// Initialize the [FlutterLocalNotificationsPlugin] package.
-late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
-
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // Set the background messaging handler early on, as a named top-level function
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  if (!kIsWeb) {
-    await setupFlutterNotifications();
-  }
-
-  runApp(MessagingExampleApp());
-}
-
-/// Entry point for the example application.
-class MessagingExampleApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Messaging Example App',
-      theme: ThemeData.dark(),
-      routes: {
-        '/': (context) => Application(),
-        '/message': (context) => MessageView(),
-      },
-    );
-  }
-}
-
-// Crude counter to make messages unique
-int _messageCount = 0;
-
-/// The API endpoint here accepts a raw FCM payload for demonstration purposes.
-String constructFCMPayload(String? token) {
-  _messageCount++;
-  return jsonEncode({
-    'token': token,
-    'data': {
-      'via': 'FlutterFire Cloud Messaging!!!',
-      'count': _messageCount.toString(),
-    },
-    'notification': {
-      'title': 'Hello FlutterFire!',
-      'body': 'This notification (#$_messageCount) was created via FCM!',
-    },
+  const MapHomePage({
+    super.key,
+    this.pickupLocation,
+    this.dropLocation,
+    this.isPickupSelection = false,
+    this.showRoute = false,
+    this.initialLocation,
   });
-}
 
-/// Renders the example application.
-class Application extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() => _Application();
+  State<MapHomePage> createState() => _MapHomePageState();
 }
 
-class _Application extends State<Application> {
-  String? _token;
-  String? initialMessage;
-  bool _resolved = false;
+class _MapHomePageState extends State<MapHomePage> {
+  late MapController _mapController;
+  bool _isInitialized = false;
+  bool _mapCreated = false;
+
+  // Cache for ride options to prevent rebuilds
+  Future<List<Map<String, dynamic>>>? _cachedRideOptionsFuture;
+  String? _lastRouteKey;
 
   @override
   void initState() {
     super.initState();
-
-    FirebaseMessaging.instance.getInitialMessage().then(
-      (value) => setState(() {
-        _resolved = true;
-        initialMessage = value?.data.toString();
-      }),
-    );
-
-    FirebaseMessaging.onMessage.listen(showFlutterNotification);
-
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('A new onMessageOpenedApp event was published!');
-      Navigator.pushNamed(
-        context,
-        '/message',
-        arguments: MessageArguments(message, true),
-      );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initialize();
     });
   }
 
-  Future<void> sendPushMessage() async {
-    if (_token == null) {
-      print('Unable to send FCM message, no token exists.');
+  Future<void> _initialize() async {
+    _mapController = Provider.of<MapController>(context, listen: false);
+
+    // Step 1: Ensure current location is loaded
+    if (_mapController.currentPosition == null) {
+      await _mapController.getCurrentLocation();
+    }
+
+    setState(() {
+      _isInitialized = true;
+    });
+
+    // If map is already created, we can update route
+    if (_mapCreated) {
+      _updateRouteIfNeeded();
+    }
+  }
+
+  void _onMapCreated(GoogleMapController controller) {
+    // Use the MapController's onMapCreated method
+    _mapController.onMapCreated(controller);
+
+    setState(() {
+      _mapCreated = true;
+    });
+
+    // Now that map is created, update route if needed
+    _updateRouteIfNeeded();
+  }
+
+  void _updateRouteIfNeeded() {
+    // Only draw route if we have both locations and showRoute is true
+    if (widget.pickupLocation == null ||
+        widget.dropLocation == null ||
+        !widget.showRoute) {
       return;
     }
 
-    try {
-      await http.post(
-        Uri.parse('https://api.rnfirebase.io/messaging/send'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: constructFCMPayload(_token),
-      );
-      print('FCM request for device sent!');
-    } catch (e) {
-      print(e);
+    // If this is a route view (both pickup and drop are provided)
+    final pickupLatLng = LatLng(
+      widget.pickupLocation!.latitude,
+      widget.pickupLocation!.longitude,
+    );
+
+    final dropLatLng = LatLng(
+      widget.dropLocation!.latitude,
+      widget.dropLocation!.longitude,
+    );
+
+    // Add pickup marker
+    _mapController.markers.removeWhere(
+      (marker) => marker.markerId.value == 'pickup',
+    );
+    _mapController.markers.add(
+      Marker(
+        markerId: const MarkerId('pickup'),
+        position: pickupLatLng,
+        icon: _mapController.markerIconGreen,
+        infoWindow: InfoWindow(
+          title: widget.pickupLocation!.name,
+          snippet: widget.pickupLocation!.address,
+        ),
+      ),
+    );
+
+    // Add drop marker
+    _mapController.markers.removeWhere(
+      (marker) => marker.markerId.value == 'drop',
+    );
+    _mapController.markers.add(
+      Marker(
+        markerId: const MarkerId('drop'),
+        position: dropLatLng,
+        icon: _mapController.markerIconRed,
+        infoWindow: InfoWindow(
+          title: widget.dropLocation!.name,
+          snippet: widget.dropLocation!.address,
+        ),
+      ),
+    );
+
+    // Draw route between the two points
+    _mapController.drawRoute(pickupLatLng, dropLatLng);
+
+    // Only load rider markers when showRoute is true (i.e., when 'VIEW ROUTE' button was clicked)
+    if (widget.showRoute) {
+      _mapController.plotRandomRiderMarkers(pickupLatLng);
     }
   }
 
-  Future<void> onActionSelected(String value) async {
-    switch (value) {
-      case 'subscribe':
-        {
-          print(
-            'FlutterFire Messaging Example: Subscribing to topic "fcm_test".',
-          );
-          await FirebaseMessaging.instance.subscribeToTopic('fcm_test');
-          print(
-            'FlutterFire Messaging Example: Subscribing to topic "fcm_test" successful.',
-          );
-        }
-        break;
-      case 'unsubscribe':
-        {
-          print(
-            'FlutterFire Messaging Example: Unsubscribing from topic "fcm_test".',
-          );
-          await FirebaseMessaging.instance.unsubscribeFromTopic('fcm_test');
-          print(
-            'FlutterFire Messaging Example: Unsubscribing from topic "fcm_test" successful.',
-          );
-        }
-        break;
-      case 'get_apns_token':
-        {
-          if (defaultTargetPlatform == TargetPlatform.iOS ||
-              defaultTargetPlatform == TargetPlatform.macOS) {
-            print('FlutterFire Messaging Example: Getting APNs token...');
-            String? token = await FirebaseMessaging.instance.getAPNSToken();
-            print('FlutterFire Messaging Example: Got APNs token: $token');
-          } else {
-            print(
-              'FlutterFire Messaging Example: Getting an APNs token is only supported on iOS and macOS platforms.',
-            );
-          }
-        }
-        break;
-      default:
-        break;
-    }
-  }
+  bool isRouteView = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cloud Messaging'),
-        actions: <Widget>[
-          PopupMenuButton(
-            onSelected: onActionSelected,
-            itemBuilder: (BuildContext context) {
-              return [
-                const PopupMenuItem(
-                  value: 'subscribe',
-                  child: Text('Subscribe to topic'),
-                ),
-                const PopupMenuItem(
-                  value: 'unsubscribe',
-                  child: Text('Unsubscribe to topic'),
-                ),
-                const PopupMenuItem(
-                  value: 'get_apns_token',
-                  child: Text('Get APNs token (Apple only)'),
-                ),
-              ];
-            },
-          ),
-        ],
-      ),
-      floatingActionButton: Builder(
-        builder: (context) => FloatingActionButton(
-          onPressed: sendPushMessage,
-          backgroundColor: Colors.white,
-          child: const Icon(Icons.send),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            MetaCard('Permissions', Permissions()),
-            MetaCard(
-              'Initial Message',
-              Column(
-                children: [
-                  Text(_resolved ? 'Resolved' : 'Resolving'),
-                  Text(initialMessage ?? 'None'),
-                ],
-              ),
-            ),
-            MetaCard(
-              'FCM Token',
-              TokenMonitor((token) {
-                _token = token;
-                return token == null
-                    ? const CircularProgressIndicator()
-                    : SelectableText(
-                        token,
-                        style: const TextStyle(fontSize: 12),
+      body: !_isInitialized
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Expanded(
+                  child: Consumer<MapController>(
+                    builder: (context, mapController, child) {
+                      return Stack(
+                        children: [
+                          GoogleMap(
+                            onMapCreated: _onMapCreated,
+                            initialCameraPosition: CameraPosition(
+                              target:
+                                  widget.initialLocation ??
+                                  mapController.currentPosition!,
+                              // Default: Delhi
+                              zoom: 14,
+                            ),
+                            markers: mapController.markers,
+                            polylines: mapController.polylines,
+                            myLocationEnabled: true,
+                            myLocationButtonEnabled: false,
+                            zoomControlsEnabled: false,
+                            mapToolbarEnabled: false,
+                            onCameraMove: (_) {
+                              if (widget.showRoute) {
+                                setState(() {
+                                  isRouteView = false;
+                                });
+                              }
+                            },
+                            onTap: widget.showRoute
+                                ? null // Disable tap in route view mode
+                                : _handleMapTap,
+                          ),
+
+                          // Current Location Button
+                          _locateMeBtn(mapController),
+                          // Locate Path Button
+                          _locatePathBtn(mapController),
+                        ],
                       );
-              }),
+                    },
+                  ),
+                ),
+                // Ride options container - show only in route view mode
+                // This is outside the Consumer to prevent rebuilds on map changes
+                if (widget.showRoute) _buildRideOptionsContainer(),
+              ],
             ),
-            ElevatedButton(
-              onPressed: () {
-                FirebaseMessaging.instance.getInitialMessage().then((
-                  RemoteMessage? message,
-                ) {
-                  if (message != null) {
-                    Navigator.pushNamed(
-                      context,
-                      '/message',
-                      arguments: MessageArguments(message, true),
-                    );
-                  }
-                });
-              },
-              child: const Text('getInitialMessage()'),
-            ),
-            MetaCard('Message Stream', MessageList()),
-          ],
+    );
+  }
+
+  void _handleMapTap(LatLng position) {
+    // If we're in selection mode, show a pin at the tapped location
+    if (_mapController.mapController != null) {
+      final markerId = MarkerId(
+        widget.isPickupSelection ? 'pickup_select' : 'drop_select',
+      );
+
+      // Remove existing selection marker
+      _mapController.markers.removeWhere(
+        (marker) => marker.markerId.value == markerId,
+      );
+
+      // Add new marker
+      _mapController.markers.add(
+        Marker(
+          markerId: markerId,
+          position: position,
+          icon: widget.isPickupSelection
+              ? _mapController.markerIconGreen
+              : _mapController.markerIconRed,
         ),
+      );
+
+      // Force a rebuild to show the new marker
+      setState(() {});
+
+      // Center the map on the selected location
+      _mapController.mapController!.animateCamera(
+        CameraUpdate.newLatLng(position),
+      );
+    }
+  }
+
+  Widget _locateMeBtn(MapController mapController) {
+    return Positioned(
+      bottom: 16,
+      right: 16,
+      child: IconButton(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.all(Colors.white),
+          shape: WidgetStateProperty.all(const CircleBorder()),
+        ),
+        onPressed: () => mapController.moveToCurrentLocation(),
+        icon: const Icon(Icons.my_location, color: Colors.blue),
       ),
     );
   }
-}
 
-/// UI Widget for displaying metadata.
-class MetaCard extends StatelessWidget {
-  final String _title;
-  final Widget _children;
+  Widget _locatePathBtn(MapController mapController) {
+    return Positioned(
+      bottom: 60,
+      right: 16,
+      child: IconButton(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.all(Colors.white),
+          shape: WidgetStateProperty.all(const CircleBorder()),
+        ),
+        onPressed: () {
+          mapController.fitCameraToPolyline();
+          setState(() {
+            isRouteView = true;
+          });
+        },
+        icon: const Icon(Icons.directions, color: Colors.brown),
+      ),
+    );
+  }
 
-  // ignore: public_member_api_docs
-  MetaCard(this._title, this._children);
+  Future<List<Map<String, dynamic>>> _getRideOptions() async {
+    if (widget.pickupLocation == null || widget.dropLocation == null) {
+      return _getDefaultRideOptions();
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(left: 8, right: 8, top: 8),
-      child: Card(
+    final pickupLatLng = LatLng(
+      widget.pickupLocation!.latitude,
+      widget.pickupLocation!.longitude,
+    );
+
+    final dropLatLng = LatLng(
+      widget.dropLocation!.latitude,
+      widget.dropLocation!.longitude,
+    );
+
+    try {
+      return await _mapController.getRideOptions(pickupLatLng, dropLatLng);
+    } catch (e) {
+      debugPrint('Error getting ride options: $e');
+      return _getDefaultRideOptions();
+    }
+  }
+
+  List<Map<String, dynamic>> _getDefaultRideOptions() {
+    return [
+      {
+        'id': 'bike',
+        'icon': 'motorbike',
+        'title': 'Bike',
+        'subtitle': '2 mins • Drop 11:53 pm',
+        'price': '₹59',
+        'isSelected': _mapController.selectedTransportOption == 'bike',
+        'fastestBadge': true,
+      },
+      {
+        'id': 'car_economy',
+        'icon': 'car',
+        'title': 'Cab Economy',
+        'subtitle': 'Affordable car rides\n2 mins away • Drop 11:53 pm',
+        'price': '₹138',
+        'isSelected': _mapController.selectedTransportOption == 'car_economy',
+        'badge': '👥 4',
+      },
+      {
+        'id': 'auto',
+        'icon': 'auto_marker',
+        'title': 'Auto',
+        'subtitle': '2 mins • Drop 11:53 pm',
+        'price': '₹111',
+        'isSelected': _mapController.selectedTransportOption == 'auto',
+      },
+      {
+        'id': 'car_premium',
+        'icon': 'taxi',
+        'title': 'Cab Premium',
+        'subtitle': '2 mins • Drop 11:53 pm',
+        'price': '₹166',
+        'isSelected': _mapController.selectedTransportOption == 'car_premium',
+      },
+    ];
+  }
+
+  Widget _buildRideOption({
+    required String icon,
+    required String title,
+    required String subtitle,
+    required String price,
+    required bool isSelected,
+    String? badge,
+    bool fastestBadge = false,
+    String? optionId,
+    VoidCallback? onTap,
+  }) {
+    print('Building icon for $title assets/icons/$icon.png');
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isSelected ? Colors.black : Colors.transparent,
+            width: isSelected ? 1 : 0,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? Colors.black.withOpacity(0.05) : Colors.white,
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+          padding: const EdgeInsets.all(8),
+          child: Row(
             children: [
+              // Icon
               Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                child: Text(_title, style: const TextStyle(fontSize: 18)),
+                width: 40,
+                height: 40,
+
+                child: Center(
+                  child: Image.asset(
+                    'assets/icons/$icon.png',
+                    width: isSelected ? 35 : 26,
+                    height: isSelected ? 35 : 26,
+                  ),
+                ),
               ),
-              _children,
+              const SizedBox(width: 12),
+
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (fastestBadge) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'FASTEST',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                        if (badge != null) ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            badge,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Price
+              Text(
+                price,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildBookButton() {
+    // Get the MapController without listening to changes (since parent Selector handles this)
+    final mapController = Provider.of<MapController>(context, listen: false);
+    final selectedOption = mapController.getSelectedTransportOptionDetails();
+    final optionTitle = selectedOption?['title'] ?? 'Cab Economy';
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: Colors.grey[300]!, width: 2),
+          left: BorderSide.none,
+          right: BorderSide.none,
+          bottom: BorderSide.none,
+        ),
+      ),
+      width: MediaQuery.of(context).size.width,
+      padding: const EdgeInsets.only(top: 5, bottom: 5, left: 20, right: 20),
+
+      height: 60,
+      child: ElevatedButton(
+        onPressed: () {
+          // Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Booking $optionTitle...'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+          NotificationService.showNotification(
+            title: "🚖 Ride Booked",
+            body:
+                "Rider is on the way — arriving in 2 min.\n"
+                "Trip Details:\n"
+                "From: ${selectedOption?['pickup_location']}\n"
+                "To: ${selectedOption?['drop_location']}\n"
+                "Time: ${selectedOption?['duration']}\n"
+                "Distance: ${selectedOption?['distance']}\n"
+                "Mode: ${selectedOption?['mode']}",
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(
+            0xFFFFC107,
+          ), // Yellow color like in image
+          foregroundColor: Colors.black,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(25),
+          ),
+        ),
+        child: Text(
+          'Book $optionTitle',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  // Cached ride options container - only rebuild when location selection changes
+  Widget _buildRideOptionsContainer() {
+    return Container(
+      height: 350,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 10, spreadRadius: 2),
+        ],
+      ),
+      child: Stack(
+        children: [
+          // Scrollable ride options - positioned to leave space for book button
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 70, // Leave space for book button
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Ride options - Only rebuild when transport selection changes
+                  Selector<MapController, String>(
+                    selector: (context, mapController) =>
+                        mapController.selectedTransportOption,
+                    builder: (context, selectedTransportOption, child) {
+                      return FutureBuilder<List<Map<String, dynamic>>>(
+                        future: _getCachedRideOptions(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          }
+
+                          final rideOptions =
+                              snapshot.data ?? _getDefaultRideOptions();
+
+                          return Column(
+                            children: rideOptions.map((option) {
+                              return _buildRideOption(
+                                icon: option['icon'],
+                                title: option['title'],
+                                subtitle: option['subtitle'],
+                                price: option['price'],
+                                isSelected: option['isSelected'] ?? false,
+                                badge: option['badge'],
+                                fastestBadge: option['fastestBadge'] ?? false,
+                                optionId: option['id'],
+                                onTap: () {
+                                  if (option['id'] != null) {
+                                    _mapController.selectTransportOption(
+                                      option['id'],
+                                    );
+
+                                    _mapController.plotRandomRiderMarkers(
+                                      LatLng(
+                                        widget.pickupLocation?.latitude ?? 0,
+                                        widget.pickupLocation?.longitude ?? 0,
+                                      ),
+                                    );
+                                  }
+                                },
+                              );
+                            }).toList(),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Book button - positioned at bottom
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Selector<MapController, String>(
+              selector: (context, mapController) =>
+                  mapController.selectedTransportOption,
+              builder: (context, selectedTransportOption, child) {
+                return _buildBookButton();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Cache management for ride options
+  Future<List<Map<String, dynamic>>> _getCachedRideOptions() {
+    final routeKey =
+        '${widget.pickupLocation?.latitude ?? 0},${widget.pickupLocation?.longitude ?? 0}-${widget.dropLocation?.latitude ?? 0},${widget.dropLocation?.longitude ?? 0}';
+
+    if (_lastRouteKey != routeKey || _cachedRideOptionsFuture == null) {
+      _lastRouteKey = routeKey;
+      _cachedRideOptionsFuture = _getRideOptions();
+    }
+
+    return _cachedRideOptionsFuture!;
   }
 }
