@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../models/location_model.dart';
 
@@ -11,9 +12,9 @@ abstract class LocationRemoteDataSource {
 
 class LocationRemoteDataSourceImpl implements LocationRemoteDataSource {
   final String apiKey;
-  final http.Client client;
+  final Dio dio = Dio();
 
-  LocationRemoteDataSourceImpl({required this.apiKey, required this.client});
+  LocationRemoteDataSourceImpl({required this.apiKey});
 
   @override
   Future<List<LocationModel>> searchPlaces(String query) async {
@@ -21,10 +22,10 @@ class LocationRemoteDataSourceImpl implements LocationRemoteDataSource {
       final String url =
           'https://maps.googleapis.com/maps/api/place/textsearch/json?query=$query&key=$apiKey';
 
-      final response = await client.get(Uri.parse(url));
+      final response = await dio.get(url);
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+        final Map<String, dynamic> data = response.data;
         final List<dynamic> results = data['results'] ?? [];
 
         return results.map((place) {
@@ -54,10 +55,10 @@ class LocationRemoteDataSourceImpl implements LocationRemoteDataSource {
       final String url =
           'https://maps.googleapis.com/maps/api/geocode/json?latlng=${coordinates.latitude},${coordinates.longitude}&key=$apiKey';
 
-      final response = await client.get(Uri.parse(url));
+      final response = await dio.get(url);
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+        final Map<String, dynamic> data = response.data;
         final List<dynamic> results = data['results'] ?? [];
 
         if (results.isNotEmpty) {
@@ -87,10 +88,10 @@ class LocationRemoteDataSourceImpl implements LocationRemoteDataSource {
       final String url =
           'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$query&key=$apiKey';
 
-      final response = await client.get(Uri.parse(url));
+      final response = await dio.get(url);
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+        final Map<String, dynamic> data = response.data;
         final List<dynamic> predictions = data['predictions'] ?? [];
 
         return predictions.map((prediction) {

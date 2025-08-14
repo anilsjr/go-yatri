@@ -1,57 +1,70 @@
 # Goyatri
 
-Goyatri is a cross-platform Flutter application for selecting transportation options and managing locations. It provides features such as pickup location selection, recent locations, favorite locations, and map-based selection. The app is designed for Android, iOS, Web, Windows, Linux, and macOS platforms.
+Goyatri is a cross-platform Flutter application for transportation selection and location management, built with a clean architecture. It supports Android, iOS, Web, Windows, Linux, and macOS platforms.
 
 ## Features
 
-- Select pickup location using search, recent, favorite, or map
-- View and manage recent and favorite locations
+- Select pickup location via search, recent, favorite, or map
+- View/manage recent and favorite locations
 - Use current GPS location for pickup
-- Map-based location selection
-- Modern UI with Material Design
-- Platform support: Android, iOS, Web, Windows, Linux, macOS
+- Map-based location selection with custom markers
+- Draw paths on map using polylines
+- Firebase authentication and notifications
+- Modern UI (Material Design)
 
-## Getting Started
+## Tech Stack & Packages
 
-### Prerequisites
+- **Clean Architecture**: Organized by feature, core, services, storage
+- **GetX**: Navigation
+- **Provider**: State management/controllers
+- **permission_handler**: Request location permissions
+- **google_maps_flutter**: Map integration
+- **flutter_polyline_points**: Draw paths on map
+- **Custom Markers**: For map locations (see `assets/icons/`)
+- **firebase_core & firebase_auth**: Authentication
+- **flutter_local_notifications**: Local notifications
 
-- [Flutter SDK](https://flutter.dev/docs/get-started/install)
-- Dart SDK
-- Android Studio or VS Code
+## Folder Structure
 
-### Installation
+```
+lib/
+  main.dart
+  features/
+    location/
+      data/
+      domain/
+      presentation/
+    ...
+  core/
+  services/
+  storage/
+assets/
+  icons/
+  map/
+  ...
+android/
+ios/
+web/
+windows/
+linux/
+macos/
+test/
+```
 
-1. Clone the repository:
-   ```sh
-   git clone <repo-url>
-   cd goyatri
-   ```
-2. Install dependencies:
-   ```sh
-   flutter pub get
-   ```
-3. Run the app:
-   ```sh
-   flutter run
-   ```
-
-## Project Structure
-
-- `lib/` - Main source code
-  - `main.dart` - Entry point
-  - `features/` - Feature modules (location, routes, etc.)
-  - `core/` - Core utilities
-  - `services/` - Service classes
-  - `storage/` - Storage and persistence
-- `assets/` - Images and icons
-- `android/`, `ios/`, `web/`, `windows/`, `linux/`, `macos/` - Platform-specific code
-- `test/` - Unit and widget tests
+- **assets/**: Images, icons, custom map markers
+- **features/**: Feature modules (location, routes, etc.)
+- **core/**: Core utilities
+- **services/**: Service classes
+- **storage/**: Persistence
 
 ## Usage
 
-- Select pickup location by searching or using current location
-- View recent and favorite locations
-- Select location on map
+- Search/select pickup location
+- Use current location (with permission)
+- View recent/favorite locations
+- Select location on map (custom markers, polylines)
+- Auth via Firebase
+- Receive notifications
 
 ## Contributing
 
