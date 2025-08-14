@@ -85,3 +85,5 @@ Contributions are welcome! Please open issues or submit pull requests for improv
 
 This project is licensed under the MIT License.
 
+## Note
+**Important:** Do not use the API key included in this repository. It has been deactivated for security reasons. Please use your own API key for any integrations.
