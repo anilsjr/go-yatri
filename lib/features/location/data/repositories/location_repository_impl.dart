@@ -105,7 +105,7 @@ class LocationRepositoryImpl implements LocationSelectionRepository {
       }
 
       Position position = await Geolocator.getCurrentPosition(
-        // desiredAccuracy: LocationAccuracy.high,
+        desiredAccuracy: LocationAccuracy.medium,
       );
 
       return LatLng(position.latitude, position.longitude);

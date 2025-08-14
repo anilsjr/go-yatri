@@ -121,9 +121,8 @@ class _DropLocationPageState extends State<DropLocationPage> {
                     provider.selectedPickupLocation != null &&
                     provider.selectedDropLocation != null,
                 builder: (context, showButton, child) {
-                  return showButton
-                      ? _buildSelectOnMapButton(context)
-                      : const SizedBox.shrink();
+                  return _buildSelectOnMapButton(context);
+                  // : const SizedBox.shrink();
                 },
               ),
             ],
@@ -195,7 +194,9 @@ class _DropLocationPageState extends State<DropLocationPage> {
 
         return ListView.builder(
           padding: EdgeInsets.zero,
-          itemCount: provider.recentLocations.length,
+          itemCount: provider.recentLocations.length < 10
+              ? provider.recentLocations.length
+              : 10,
           itemBuilder: (context, index) {
             final location = provider.recentLocations[index];
             return _buildLocationTile(location);
@@ -272,48 +273,57 @@ class _DropLocationPageState extends State<DropLocationPage> {
       return const SizedBox.shrink(); // Skip empty locations
     }
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 4.0),
       child: InkWell(
         onTap: () {
           context.read<LocationProvider>().selectLocation(location);
           Navigator.pop(context); // Return to previous screen
         },
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
           children: [
-            const Icon(Icons.location_on, color: Colors.red, size: 24),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    location.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Icon(Icons.location_on, color: Colors.red, size: 24),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        location.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        location.address,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    location.address,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                ),
+                IconButton(
+                  icon: Icon(
+                    location.isFavorite
+                        ? Icons.favorite
+                        : Icons.favorite_border,
+                    color: location.isFavorite ? Colors.red : Colors.grey,
+                    size: 22,
                   ),
-                  const SizedBox(height: 8),
-                ],
-              ),
+                  onPressed: () => context
+                      .read<LocationProvider>()
+                      .toggleFavorite(location.id),
+                ),
+              ],
             ),
-            IconButton(
-              icon: Icon(
-                location.isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: location.isFavorite ? Colors.red : Colors.grey,
-                size: 22,
-              ),
-              onPressed: () =>
-                  context.read<LocationProvider>().toggleFavorite(location.id),
-            ),
+            SizedBox(height: 2.0),
+            Divider(height: 0.5, color: Colors.grey[300]),
           ],
         ),
       ),
@@ -335,7 +345,7 @@ class _DropLocationPageState extends State<DropLocationPage> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: Colors.red,
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 50),
               shape: RoundedRectangleBorder(
