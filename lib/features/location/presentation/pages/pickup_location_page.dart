@@ -370,7 +370,7 @@ class _LocationsList extends StatelessWidget {
 
     return ListView.builder(
       padding: EdgeInsets.zero,
-      itemCount: locations.length,
+      itemCount: (locations.length < 10) ? locations.length : 10,
       cacheExtent: 500, // Improved scrolling performance
       itemBuilder: (context, index) {
         final location = locations[index];

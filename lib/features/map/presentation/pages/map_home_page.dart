@@ -40,6 +40,15 @@ class _MapHomePageState extends State<MapHomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initialize();
     });
+
+    Future.delayed(const Duration(seconds: 15), () {
+      if (!_isInitialized) {
+        debugPrint("⚠ Map not loaded in 15 sec, retrying...");
+        setState(() {
+          _initialize(); // Retry initialization
+        });
+      }
+    });
   }
 
   Future<void> _initialize() async {
