@@ -12,6 +12,16 @@ Goyatri is a cross-platform Flutter application for transportation selection and
 - Firebase authentication and notifications
 - Modern UI (Material Design)
 
+## Demo Screenshots
+
+| Home Page                          | Login Page                           | Menu Page                          |
+| ---------------------------------- | ------------------------------------ | ---------------------------------- |
+| ![Home](demo-images/home_page.jpg) | ![Login](demo-images/login_page.jpg) | ![Menu](demo-images/menu_page.jpg) |
+
+| Notification Alert                                  | Pickup Page                            | Select Location on Map                                     | Splash Page                            |
+| --------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------- | -------------------------------------- |
+| ![Notification](demo-images/notification_alert.jpg) | ![Pickup](demo-images/pickup_page.jpg) | ![Select Location](demo-images/select_location_on_map.jpg) | ![Splash](demo-images/splash_page.jpg) |
+
 ## Tech Stack & Packages
 
 - **Clean Architecture**: Organized by feature, core, services, storage
