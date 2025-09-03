@@ -77,6 +77,14 @@ test/
 - Auth via Firebase
 - Receive notifications
 
+## Releases
+
+APK releases are automatically generated when version tags are pushed to the repository. To create a new release:
+
+1. Update the version in `pubspec.yaml`
+2. Create and push a git tag (e.g., `git tag v1.0.1 && git push origin v1.0.1`)
+3. GitHub Actions will automatically build the APK and create a release with the APK attached
+
 ## Contributing
 
 Contributions are welcome! Please open issues or submit pull requests for improvements.
