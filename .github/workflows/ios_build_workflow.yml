@@ -34,8 +34,29 @@ jobs:
       - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign
 
-      - name: Upload iOS build artifact
+      - name: Upload iOS build artifact (for workflow artifacts)
         uses: actions/upload-artifact@v4
         with:
           name: ios-release
           path: build/ios/iphoneos
+
+      # Create GitHub Release (only on push, not PRs)
+      - name: Create Release
+        if: github.event_name == 'push'
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: "Release v${{ github.run_number }}"
+          body: "Automatic iOS release from CI workflow."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Upload iOS build to Release
+      - name: Upload iOS build to Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/ios/iphoneos/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
