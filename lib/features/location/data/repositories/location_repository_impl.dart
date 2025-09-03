@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:goyatri/core/util/app_constant.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -8,8 +9,7 @@ import '../../domain/repositories/location_selection_repository.dart';
 
 class LocationRepositoryImpl implements LocationSelectionRepository {
   final Dio _dio = Dio();
-  final String _googleApiKey =
-      'AIzaSyBIJfuTJME0jr6ubJCNuDK9oUEHMWNrzEY'; // Note: This should be moved to environment variables
+  final String _googleApiKey = AppConstant.googleApiKey;
   final String _storageKey = 'recent_locations';
   final String _favoritesKey = 'favorite_locations';
 

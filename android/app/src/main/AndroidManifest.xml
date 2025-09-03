@@ -37,7 +37,7 @@
             android:value="2" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBIJfuTJME0jr6ubJCNuDK9oUEHMWNrzEY" />
+            android:value="AIzaSyBF6gIU35hd51XwJrZOh4j8x9Hcr-WmPt0" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
