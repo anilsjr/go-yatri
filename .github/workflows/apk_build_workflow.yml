@@ -1,4 +1,4 @@
-name: Flutter Build (Android & iOS)
+name: Android Flutter Build (iOS)
 
 on:
   push:
