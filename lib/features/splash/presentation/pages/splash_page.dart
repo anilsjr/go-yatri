@@ -14,13 +14,12 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AssetLoader().startLoading(context);
     });
 
     // Navigate to the home page after a 2-second delay
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 10), () {
       if (mounted) {
         Get.offNamed(AppRoutes.home);
       }
